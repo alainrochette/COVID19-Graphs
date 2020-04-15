@@ -1,5 +1,5 @@
 # COVID19-Graphs
-Compare countries' COVID19 timeline in one graph.
+Graph multiple countries' COVID-19 timeline in one window.
 
 *Source data updated every day at 7:55 PM*
 
