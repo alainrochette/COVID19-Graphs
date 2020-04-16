@@ -8,11 +8,16 @@ import math
 import os
 from scipy.ndimage.filters import gaussian_filter1d
 import textwrap
+# import mpld3
+# from mpld3 import plugins
+
+
 
 caseWord = {0: "Jan 22", 1:"first case", 2:"second case", 3:"third case"}
 SMALL_SIZE = 7
 MEDIUM_SIZE = 8
 BIGGER_SIZE = 10
+
 
 
 class Graph():
@@ -40,7 +45,7 @@ class Graph():
         mpl.rcParams['legend.fontsize'] = SMALL_SIZE - 1
         if self.params: return 0
         self.params = { 'text.color': "0.3",
-                        'font.size': 8,
+                        'font.size': 9,
                         # 'font.sans-serif' : "Consolas",
                         'lines.linewidth' : 1.7,
                         "axes.labelsize" :MEDIUM_SIZE, "axes.edgecolor" :"white",
@@ -209,8 +214,10 @@ class Graph():
                 plt.rc('legend', fontsize=BIGGER_SIZE-0.5)
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='white',labelcolor='dimgray')
                 fig= plt.figure(figsize=(15,7))
+                ax = fig.add_subplot(111)
             if sp == 3 or sp == 4: plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='salmon')
-            if sp <= 4: fig =plt.subplot(2,2, sp)
+            if sp <= 4:
+                ax = fig.add_subplot(2,2,sp)
 
             g2 = g.replace("PerM"," (per 1M people)")
             plt.title("" + g2.replace("new","New ").title(),color="0.25",fontsize=11,fontname="DejaVu Sans")
@@ -234,6 +241,9 @@ class Graph():
                         plt.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name)
 
             self.legend = plt.legend(fancybox=True,loc="upper left", ncol=1)
+
+
+
 
             if self.All.days_since==0:
                 if sp > 4: plt.xticks(self.All.dates[::2])
@@ -263,3 +273,19 @@ class Graph():
             sp +=1
 
         plt.show()
+
+
+
+
+
+
+
+        # handles, labels = ax.get_legend_handles_labels()
+        # interactive_legend = plugins.InteractiveLegendPlugin(zip(handles,
+        #                                              ax.collections),
+        #                                          labels,
+        #                                          alpha_unsel=0.5,
+        #                                          alpha_over=1.5,
+        #                                          start_visible=False)
+        # plugins.connect(fig, interactive_legend)
+        # mpld3.show()

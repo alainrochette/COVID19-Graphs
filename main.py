@@ -3,24 +3,10 @@ import pickle
 import os
 import sys
 
-# svn export https://github.com/CSSEGISandData/COVID-19.git/trunk/csse_covid_19_data/csse_covid_19_time_series --force
-# svn export https://github.com/owid/covid-19-data.git/trunk/public/data/testing --force
-
-
-
-#[--------- Pick days since Xth case ---------]
 
 DAYS_SINCE = 0
 
-#[--------- Pick which countries to show ---------]
-#[------------------------------------------------]
-#[--------- If not valid, check spelling ---------]
-#[--------- in time_series_covid19 files ---------]
-#[------------------------------------------------]
-#[-------- You can choose states as well ---------]
-#[----- Enter state population in Country.py -----]
-
-countries_i = [           #[------ Choose color in Country.py -----]
+countries_i = [           #[------ Choose colors in Country.py -----]
 "Chile",
 "Argentina",
 "Miami-Dade, Florida",
@@ -30,11 +16,7 @@ countries_i = [           #[------ Choose color in Country.py -----]
 "Italy",
 "United Kingdom",
 "Netherlands",
-# "Sweden",
-# "China",
 "New York",
-# "London",
-# "World",
 ]
 
 
