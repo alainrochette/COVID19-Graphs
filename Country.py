@@ -21,7 +21,7 @@ country_colors ={"France":"cornflowerblue", "Ecuador":"cornflowerblue",
                 "Paraguay":"slategrey", "Lebanon":"slategrey",
                 "Korea, South":"pink", "Florida":"pink", "Belgium":"pink",
                 "California":"darkgoldenrod",
-                "Los Angeles, California": "goldenrod",
+                "Los Angeles, California": "goldenrod", "Russia":"goldenrod",
                 "China":"orangered", "Chile":"orangered", "Switzerland":"orangered","Rhode Island":"orangered",
                 "Peru":"peru", "Maryland":"peru",
                 "Venezuela":"crimson", "Hong Kong":"crimson",
@@ -37,10 +37,7 @@ class Countries:
         self.countries_list = []
         self.regions = {}
         self.region = region
-        if colors:
-            self.country_colors = colors
-        else:
-            self.country_colors = country_colors
+        self.country_colors = colors if colors else country_colors
         self.loadRegion()
 
     def show(self, c):
@@ -71,16 +68,15 @@ class Countries:
         if "*" in name:
             self.addState(name)
             return 0
-        pop = 0
         found = False
-        if name in populationD: pop =populationD[name]
+        pop = populationD[name] if name in populationD else 0
         if pop==0:
             with open('population_data/Pop2020.csv',encoding='mac_roman') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 line_count = 0
                 for row in csv_reader:
                     if line_count > 0 and row[0].lower()==name.lower():
-                        pop =int(row[4])/1000
+                        pop =int(float(row[4]))/1000
                         break
                     line_count += 1
         if pop == 0: pop = 1
@@ -96,37 +92,16 @@ class Countries:
                         if row[0].lower().replace("*","")==name.lower(): name = row[0].replace("*","")
                         found = True
                         if c:
-                            c.allcases =  [x + y for x, y in zip(c.allcases, [int(x) for x in row[4:][0:len(self.dates)] if x != ""])]
+                            c.allcases =  [x + y for x, y in zip(c.allcases, [int(float(x)) for x in row[4:][0:len(self.dates)] if x != ""])]
                         else:
                             newcolor =[random.random(),random.random(),random.random()]
                             if name in self.country_colors: newcolor = self.country_colors[name]
-                            c = self.get(name)
-                            if not c: c = Country(self,name,pop,newcolor)
-                            c.allcases = [int(x) for x in row[4:][0:len(self.dates)] if x != ""]
+                            c = Country(self,name,pop,newcolor) if not c else self.get(name)
+                            c.allcases = [int(float(x)) for x in row[4:][0:len(self.dates)] if x != ""]
                     line_count += 1
 
                 if found:
-                    c.day = 0
-                    for cc in range(0,len(c.allcases)):
-                        if c.allcases[cc]  > self.days_since - 1 and c.day==0:
-                            c.day = cc
-                            break
-
-                    c.cases =  [c.allcases[0]]
-                    max = c.allcases[0]
-                    for x in range(1,len(c.allcases)):
-                        if c.allcases[x] >=  max:
-                            c.cases.append(c.allcases[x])
-                            max = c.allcases[x]
-                        else:
-                            c.cases.append(max)
-
-                    c.newcases = [0] + [c.cases[x] - c.cases[x-1] for x in range(1,len(c.cases))]
-                    c.days = len(self.dates)-c.day
-
-                    c.x =[i for i in range(0,c.days)]
-                    c.cases = c.cases[c.day:]
-                    c.newcases = c.newcases[c.day:]
+                    self.clean(c,"cases")
         if found:
             if self.region == "My List":
                 with open('My_List.txt', 'wb') as fp:
@@ -140,23 +115,13 @@ class Countries:
                         self.dates = [d for d in row[4:] if d != ""]
                     elif row[1].lower().replace("*","")==name.lower() or row[0].lower().replace("*","")==name.lower() or name=="World":
                         if deathCount > 0:
-                            c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(x) for x in row[4:][0:len(self.dates)] if x != ""])]
+                            c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(float(x)) for x in row[4:][0:len(self.dates)] if x != ""])]
                         else:
-                            c.alldeaths = [int(x) for x in row[4:][0:len(self.dates)] if x != ""]
+                            c.alldeaths = [int(float(x)) for x in row[4:][0:len(self.dates)] if x != ""]
                         deathCount += 1
                     line_count += 1
 
-
-                c.deaths =  [c.alldeaths[0]]
-                max = c.alldeaths[0]
-                for x in range(1,len(c.alldeaths)):
-                    if c.alldeaths[x] >=  max:
-                        c.deaths.append(c.alldeaths[x])
-                        max = c.alldeaths[x]
-                    else:
-                        c.deaths.append(max)
-                c.deaths = c.deaths[c.day:]
-                c.newdeaths = [0] + [c.deaths[x] - c.deaths[x-1] for x in range(1,len(c.deaths))]
+                self.clean(c,"deaths")
                 c.vis = 1
             with open('testing/covid-testing-all-observations.csv') as csv_file:
                     csv_reader = csv.reader(csv_file, delimiter=',')
@@ -172,14 +137,10 @@ class Countries:
 
 
     def addState(self,place):
-        pop = 0
         found = False
-        ast = ""
-        if "*" in place:
-            place= place.replace("*","")
-            ast = "*"
-
-        if place in populationD: pop =populationD[place]
+        ast = "*" if "*" in place else ""
+        place= place.replace(ast,"")
+        pop =populationD[place] if place in populationD else 0
         with open('csse_covid_19_time_series/time_series_covid19_confirmed_US.csv') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 line_count = 0
@@ -193,37 +154,17 @@ class Countries:
                         if place.lower().replace(" ","")  ==  row[10].replace(", US","").lower().replace(" ",""): place = row[10].replace(", US","")
                         if place.lower()  ==  row[6].lower(): place = row[6]
                         if c:
-                            c.allcases =  [x + y for x, y in zip(c.allcases, [int(x) for x in row[11:][0:len(self.dates)] if x != ""])]
+                            c.allcases =  [x + y for x, y in zip(c.allcases, [int(float(x)) for x in row[11:][0:len(self.dates)] if x != ""])]
                         else:
                             newcolor =[random.random(),random.random(),random.random()]
                             if place +ast in self.country_colors: newcolor = self.country_colors[place+ast]
                             c = self.get(place+ast)
                             if not c: c = Country(self,place +ast,pop,newcolor)
-                            c.allcases = [int(x) for x in row[11:][0:len(self.dates)] if x != ""]
+                            c.allcases = [int(float(x)) for x in row[11:][0:len(self.dates)] if x != ""]
                     line_count += 1
 
                 if found:
-                    c.day = 0
-                    for cc in range(0,len(c.allcases)):
-                        if c.allcases[cc]  > self.days_since - 1 and c.day==0:
-                            c.day = cc
-                            break
-
-                    c.cases =  [c.allcases[0]]
-                    max = c.allcases[0]
-                    for x in range(1,len(c.allcases)):
-                        if c.allcases[x] >=  max:
-                            c.cases.append(c.allcases[x])
-                            max = c.allcases[x]
-                        else:
-                            c.cases.append(max)
-
-                    c.newcases = [0] + [c.cases[x] - c.cases[x-1] for x in range(1,len(c.cases))]
-                    c.days = len(self.dates)-c.day
-
-                    c.x =[i for i in range(0,c.days)]
-                    c.cases = c.cases[c.day:]
-                    c.newcases = c.newcases[c.day:]
+                    self.clean(c,"cases")
         if found:
             if self.region == "My List":
                 with open('My_List.txt', 'wb') as fp:
@@ -238,27 +179,17 @@ class Countries:
                         self.dates = [d for d in row[12:] if d != ""]
                     elif (place.lower().replace(" ","")  ==  row[10].replace(", US","").lower().replace(" ","") or
                         place.lower()  ==  row[6].lower()):
-                        totalpop = totalpop + int(row[11])
+                        totalpop = totalpop + int(float(row[11]))
                         if deathCount > 0:
-                            c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(x) for x in row[12:][0:len(self.dates)] if x != ""])]
+                            c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(float(x)) for x in row[12:][0:len(self.dates)] if x != ""])]
                         else:
-                            c.alldeaths = [int(x) for x in row[12:][0:len(self.dates)] if x != ""]
+                            c.alldeaths = [int(float(x)) for x in row[12:][0:len(self.dates)] if x != ""]
                         deathCount += 1
                     line_count += 1
 
                 if pop == 0: c.pop = totalpop/1000000
 
-                c.deaths =  [c.alldeaths[0]]
-                max = c.alldeaths[0]
-                for x in range(1,len(c.alldeaths)):
-                    if c.alldeaths[x] >=  max:
-                        c.deaths.append(c.alldeaths[x])
-                        max = c.alldeaths[x]
-                    else:
-                        c.deaths.append(max)
-                c.deaths = c.deaths[c.day:]
-                c.newdeaths = [0] + [c.deaths[x] - c.deaths[x-1] for x in range(1,len(c.deaths))]
-
+                self.clean(c, "deaths")
                 c.vis = 1
             newest = sorted(glob.glob('csse_covid_19_daily_reports_us/*.csv'))[-1]
             with open(newest) as csv_file:
@@ -267,8 +198,33 @@ class Countries:
                     for row in csv_reader:
                         if place.lower() == row[0].lower() and row[11] != "" :
                             dt = datetime.datetime.strptime(newest.split("/")[1].split(".")[0],'%m-%d-%Y').strftime('%m/%d')
-                            c.testing = dt +"|{:,.0f}".format(int(row[11])) + " people tested  ("+ "{:,.2f}".format(int(row[11])/(c.pop*1000)) + "/K)"
+                            c.testing = dt +"|{:,.0f}".format(int(float(row[11]))) + " people tested ("+ "{:,.2f}".format(int(float(row[11]))/(c.pop*1000)) + "/K)"
                             break
+    def clean(self,c,type):
+        if type == "cases":
+            c.day = 0
+            for cc in range(0,len(c.allcases)):
+                if c.allcases[cc]  > self.days_since - 1 and c.day==0:
+                    c.day = cc
+                    break
+            c.days = len(self.dates)-c.day
+            c.x =[i for i in range(0,c.days)]
+        all = getattr(c,"all"+type)
+        norm = getattr(c,type)
+        norm =  [all[0]]
+        max = all[0]
+        for x in range(1,len(all)):
+            if all[x] >=  max:
+                norm.append(all[x])
+                max = all[x]
+            else:
+                norm.append(max)
+        new = getattr(c,"new"+type)
+        new = [0] + [norm[x] - norm[x-1] for x in range(1,len(norm))]
+        norm= norm[c.day:]
+        new = new[c.day:]
+        setattr(c,type,norm)
+        setattr(c,"new"+type,new)
 
     def loadRegion(self):
         self.regions  = {"South America": [ "Chile", "Argentina", "Colombia",
