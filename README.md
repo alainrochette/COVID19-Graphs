@@ -7,7 +7,7 @@ Graph multiple countries' COVID-19 timeline in one window. Python required.
 
 * Run: `python3 main.py [--update --install]`
   * `--update`:  Update data
-  * `--install` : Install scipy, matplotlib
+  * `--install` : Install scipy, matplotlib, and git (if OSX)
  
 * Graphs:
   * Use + to add any Place (Country, US City, US State)
