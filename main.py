@@ -29,7 +29,11 @@ except FileNotFoundError:
         pickle.dump(countries, fp)
 
 if "--install" in sys.argv:
+    os.system("clear")
+    print("---- Installing scipy, matplotlib ----\n")
     os.system("python3 -m pip install --user scipy matplotlib")
+    print("\n---- Installing XCode Command Line Tools ----\n")
+    os.system("xcode-select --install")
 if "--update" in sys.argv:
     os.system("clear")
     print("---- Updating World Data ----\n")
