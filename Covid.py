@@ -8,6 +8,7 @@ import math
 import os
 from scipy.ndimage.filters import gaussian_filter1d
 import textwrap
+# plt.ion()
 # import mpld3
 # from mpld3 import plugins
 
@@ -28,12 +29,19 @@ class Graph():
         self.scale = 1
         self.limit = 12
         self.legend = None
+        self.labels = None
         self.ylim = None
-        self.selected_place  = None
+        self.selectedC  = None
+        self.clickedG = None
         self.infoWidget = None
         self.infoBox = None
         self.removeWidget = None
         self.removeBox = None
+        self.inInput = False
+        self.axGraphs ={}
+        self.graphsYlim ={}
+        self.graphsNameheight={}
+        self.graphLabels ={}
 
     def load(self,region, days_since=0):
         self.limit  = 120 if region == "My List" else 12
@@ -48,7 +56,7 @@ class Graph():
                         'font.size': 9,
                         # 'font.sans-serif' : "Consolas",
                         'lines.linewidth' : 1.7,
-                        "axes.labelsize" :MEDIUM_SIZE, "axes.edgecolor" :"white",
+                        "axes.labelsize": MEDIUM_SIZE, "axes.edgecolor": "white",
                         "axes.labelcolor" :"0.5",
                         'xtick.color' : "0.5", 'xtick.labelsize' : SMALL_SIZE,
                         'ytick.color' : "0.5", 'ytick.labelsize' : SMALL_SIZE,
@@ -58,13 +66,12 @@ class Graph():
 
 
     def growthFactor(self,c):
-        L = c.allcases
+        L = c.cases
         gf = [1,1]+ [(L[i]-L[i-1])/(L[i-1]-L[i-2]) if (L[i-1]-L[i-2])!=0 else 1 for i in range(2,len(L))]
-        return gf[c.day:len(gf)]
+        return gf
 
     def averageGrowthFactor(self,c):
-        gf = self.growthFactor(c)
-        return sum(gf[-3:])/3
+        return sum(c.GF[-3:])/3
 
     def showL(self,c,data):
     	return [i*c.vis for i in data]
@@ -89,8 +96,9 @@ class Graph():
 
     def prep(self,):
         self.setParams()
+        self.inInput = False
         for c in self.All.countries:
-            if c.vis:
+            if c.vis and not c.newcasesPerM:
                 c.newcasesPerM = [x/c.pop for x in c.newcases]
                 c.casesPerM = [x/c.pop for x in c.cases]
                 c.deathsPerM = [x/c.pop for x in c.deaths]
@@ -106,39 +114,44 @@ class Graph():
         self.limit = 120
         if text != "":
             if self.All.get(text):
-                self.All.show(text)
+                self.selectedC = self.All.show(text)
             else:
-                self.All.addOther(text)
-            self.graph()
+                self.selectedC = self.All.addOther(text)
+            self.select(self.selectedC.name)
 
     def remove(self,text):
-        if self.selected_place:
-            if self.All.hide(self.selected_place):
-                self.graph()
+        self.All.hide(self.selectedC.name)
+        self.select(None)
+            # self.graph()
 
     def change_start(self,text):
         try:
             if int(text) != self.All.days_since:
-                plt.close('all')
+                # plt.close('all')
                 self.load(self.All.region,int(text))
         except ValueError:
             pass
 
     def change_regions(self,region):
+        self.selectedC  = None
+        plt.figure("Main")
         plt.close('all')
         self.load(region)
 
     def country_info(self,c):
-        self.selected_place = c.name
+        plt.figure("Main")
+        plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
+        self.selectedC = c
         name = c.name.split(",")[0] if "," in c.name else c.name
 
         txt ='{:15.15}  ({:3.2f} GF)'.format(name, self.averageGrowthFactor(c))
-        txt +='\n{}         {:,.1f}M'.format("Population:", round(c.pop,2)) #{:15s}
+        if c.pop < 0.1: txt +='\n{}         {:,.1f}K'.format("Population:", round(c.pop*1000,2))
+        if c.pop >= 0.1: txt +='\n{}         {:,.1f}M'.format("Population:", round(c.pop,2)) #{:15s}
 
         if c.testing != "" and len(c.testing.split("|")[1]) < 33: txt +="\n"
 
-        txt +='\n{}   {:,.0f}'.format("Current Cases:", c.cases[-1])
-        txt +='\n{} {:,.0f}\n'.format("Current Deaths:", c.deaths[-1])
+        txt +='\n{}   {:,.0f} ({:,.0f}/M)'.format("Cases:", c.cases[-1], c.casesPerM[-1])
+        txt +='\n{} {:,.0f}  ({:,.0f}/M)\n'.format("Deaths:", c.deaths[-1], c.deathsPerM[-1])
 
         if c.testing != "":
             dt = c.testing.split("|")[0]
@@ -170,69 +183,119 @@ class Graph():
             self.removeWidget.label.set_fontsize(7)
             self.removeWidget.on_clicked(self.remove)
 
+
         self.removeBox.set_visible(True)
         self.infoBox.set_visible(True)
         self.infoWidget.text_disp.set_color([0.3, 0.3, 0.3])
         self.infoWidget.text_disp.set_size(8.2)
+        if self.clickedG != "BignewcasesPerM": plt.figure("All Graphs")
+
+    def press(self,event):
+        if not self.inInput and event.key.isdigit():
+            if int(event.key) <= len(self.graphLabels[self.clickedG]): self.select(self.graphLabels[self.clickedG][int(event.key)-1])
+            return
+        if self.selectedC:
+            if event.key == "escape": self.onclick(event=None)
+            if event.key == "down" or event.key == "up":
+                dir = 1 if event.key == "down" else -1
+                curr_index = self.graphLabels[self.clickedG].index(self.selectedC.name)
+                new_index = (curr_index + dir) % len(self.graphLabels[self.clickedG])
+                self.select(self.graphLabels[self.clickedG][new_index])
+
+    def select(self,selected):
+        if not selected: self.selectedC = None
+        for x in self.graphLabels[self.clickedG]:
+            c =  self.All.get(x)
+            if x == selected or not selected:
+                c.color = c.defcolor
+                if selected: self.selectedC = c
+            else:
+                c.color = c.lightcolor
+        self.graph()
 
     def onclick(self, event):
+        if not event:
+            self.select(None)
+            return 0
         x = event.xdata
         y = event.ydata
-        bottom, top = self.ylim
-        nameheight = top / 27     # Consolas
-        maxy =  top
-        if self.removeBox: self.removeBox.set_visible(False)
-        if self.infoBox: self.infoBox.set_visible(False)
         try:
-            if x < 50 and  y < maxy and y > maxy - (nameheight*len([c for c in self.All.countries if c.vis])):
-                count = len([c for c in self.All.countries if c.vis])
+            self.clickedG = self.axGraphs[event.inaxes]
+        except KeyError:
+            self.clickedG = "BignewcasesPerM"
+        bottom, top = self.graphsYlim[self.clickedG]
+        nameheight = top / 27  if self.clickedG  == "BignewcasesPerM" else top/18     # Consol
+        maxy =  top
+        self.inInput = False
+        try:
+            if x > 2 and x < 45 and  y < maxy and y > maxy - (nameheight*len(self.graphLabels[self.clickedG])):
+                if self.removeBox: self.removeBox.set_visible(False)
+                if self.infoBox: self.infoBox.set_visible(False)
+                count = len(self.graphLabels[self.clickedG])
                 index = math.floor((maxy-y)/nameheight)
                 i = 0
-                for x in self.All.countries:
-                    if x.vis:
-                        if i == index:
-                            self.country_info(x)
-                            break
-                        i += 1
+                self.select(self.graphLabels[self.clickedG][index])
+
+            elif  x > 2 and self.selectedC:
+                if self.removeBox: self.removeBox.set_visible(False)
+                if self.infoBox: self.infoBox.set_visible(False)
+                self.select(None)
+            else:
+                self.inInput = True
         except TypeError:
             pass
 
     def graph(self):
         self.prep()
-        graphs= ["casesPerM","newcasesPerM","deathsPerM","newdeathsPerM","newcasesPerM"]
+        graphs= ["casesPerM","newcasesPerM","deathsPerM","newdeathsPerM","BignewcasesPerM"]
+        showAll = False
+        if self.clickedG and self.clickedG != "BignewcasesPerM": showAll = True
+        if showAll: graphs= ["BignewcasesPerM","casesPerM","newcasesPerM","deathsPerM","newdeathsPerM"]
         sp = 1
         if self.fig: plt.close('all')
-        self.fig = plt.figure(figsize=(15,7))
-        fig  = self.fig
+
 
         self.infoWidget = None
         self.removeWidget = None
         if self.All.days_since ==0: self.All.dates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in self.All.dates]
 
         for g in graphs:
-            if sp > 4:
+            if g == "BignewcasesPerM":
                 plt.rc('legend', fontsize=BIGGER_SIZE-0.5)
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='white',labelcolor='dimgray')
-                fig= plt.figure(figsize=(15,7))
+                fig = plt.figure("Main",figsize=(15,7))
                 ax = fig.add_subplot(111)
-            if sp == 3 or sp == 4: plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='salmon')
-            if sp <= 4:
-                ax = fig.add_subplot(2,2,sp)
+            else:
+                plt.rc('legend', fontsize=SMALL_SIZE-1)
+                # plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='white',labelcolor='dimgray')
+                self.fig = plt.figure("All Graphs",figsize=(15,7))
+                fig  = self.fig
 
-            g2 = g.replace("PerM"," (per 1M people)")
+            plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
+            if "deaths" in g:
+                plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='salmon')
+            else:
+                plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
+            if g != "BignewcasesPerM":
+                ax = fig.add_subplot(2,2,sp - showAll)
+            self.axGraphs[ax] = g
+
+
+
+            g2 = g.replace("PerM"," (per 1M people)").replace("Big","")
             plt.title("" + g2.replace("new","New ").title(),color="0.25",fontsize=11,fontname="DejaVu Sans")
-            if sp==len(graphs): plt.title("" + g2.replace("new","New ").title(),color="0.25",fontsize=14)
+            if g == "BignewcasesPerM": plt.title("" + g2.replace("new","New ").title(),color="0.25",fontsize=14)
 
             word = caseWord[self.All.days_since] if self.All.days_since in caseWord else str(self.All.days_since)+ "th case"
             plt.xlabel("Days since " + word,color='dimgray')
 
             if self.All.days_since ==0: plt.xlabel("Date")
-
-            self.order(g)
+            # g = g.replace("Big","")
+            self.order(g.replace("Big",""))
             for c in self.All.countries:
                 if c.vis:
                     gx = self.All.dates if self.All.days_since == 0 else c.x
-                    gy =getattr(c,g)[0:len(gx)]
+                    gy =getattr(c,g.replace("Big",""))[0:len(gx)]
                     if len(gy) < len(gx): gx = gx[0:len(gy)]
                     ysmoothed = gaussian_filter1d(gy, sigma=1.1)
                     if c.name== "World":
@@ -240,22 +303,27 @@ class Graph():
                     else:
                         plt.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name)
 
-            self.legend = plt.legend(fancybox=True,loc="upper left", ncol=1)
 
+            self.legend = plt.legend(fancybox=True,loc="upper left", ncol=1)
+            self.graphsYlim[g] = ax.get_ylim()
 
 
 
             if self.All.days_since==0:
-                if sp > 4: plt.xticks(self.All.dates[::2])
-                if sp <= 4: plt.xticks(self.All.dates[::4])
+                if g == "BignewcasesPerM": plt.xticks(self.All.dates[::2])
+                if g != "BignewcasesPerM": plt.xticks(self.All.dates[::4])
 
             maxx = self.getMaxX(g)
             minx = 35 if self.All.days_since==0 else 0
             plt.xlim(minx,maxx)
             plt.subplots_adjust(wspace=0.07, hspace=0.3, left=0.06,bottom=0.06,right=0.96, top=0.9)
-            self.ylim = plt.ylim()
-            if sp==len(graphs):
-                fig.canvas.mpl_connect('button_press_event', self.onclick)
+
+            # self.ylim = plt.ylim()
+            # handles, self.labels = ax.get_legend_handles_labels()
+            handles ,self.graphLabels[g]  = ax.get_legend_handles_labels()
+            fig.canvas.mpl_connect('key_press_event', self.press)
+            fig.canvas.mpl_connect('button_press_event', self.onclick)
+            if g == "BignewcasesPerM":
                 inputBox = plt.axes([0.24, 0.675, 0.1, 0.055])
                 inputWidget = TextBox(inputBox, '+', initial="", hovercolor="lightgray")
                 inputWidget.on_submit(self.submit)
@@ -272,20 +340,6 @@ class Graph():
                 radio.on_clicked(self.change_regions)
             sp +=1
 
+        if self.selectedC: self.country_info(self.selectedC)
+        if self.clickedG == "Main": plt.figure("All Graphs")
         plt.show()
-
-
-
-
-
-
-
-        # handles, labels = ax.get_legend_handles_labels()
-        # interactive_legend = plugins.InteractiveLegendPlugin(zip(handles,
-        #                                              ax.collections),
-        #                                          labels,
-        #                                          alpha_unsel=0.5,
-        #                                          alpha_over=1.5,
-        #                                          start_visible=False)
-        # plugins.connect(fig, interactive_legend)
-        # mpld3.show()

@@ -6,26 +6,49 @@ import glob
 
 # Check https://matplotlib.org/3.1.0/gallery/color/named_colors.html for Named Colors
 country_colors ={"France":"cornflowerblue", "Ecuador":"cornflowerblue",
+                "Murray, Georgia":"darkkhaki",
                 "Miami-Dade, Florida":"turquoise","Illinois":"turquoise",
                 "Germany":"dimgray", "Iran":"dimgray",
                 "Massachusetts":"skyblue", "Argentina":"skyblue", "Luxembourg":"skyblue", "Israel":"skyblue",
                 "Panama":"deepskyblue", "Georgia*":"deepskyblue",
                 "Uruguay":"steelblue", "Iceland":"steelblue", "Singapore":"steelblue", "Pennsylvania":"steelblue",
-                "Turkey":"darkorchid", "New Jersey":"darkorchid", "US":"darkorchid",
+                "Turkey":"darkorchid", "New Jersey":"darkorchid", "US":"darkorchid","Paraguay":"darkorchid",
                 "Delaware":"gold", "Spain":"gold", "Bolivia":"gold", "Saudi Arabia":"gold",
-                "Connecticut":"limegreen", "Italy":"limegreen", "Qatar":"limegreen",
+                "Connecticut":"limegreen", "Italy":"limegreen", "Qatar":"limegreen", "Brazil":"limegreen",
                 "District of Columbia":"forestgreen", "Mexico":"forestgreen",
                 "Michigan":"orange", "Netherlands":"orange", "Malaysia":"orange", "Colombia":"orange",
                 "Louisiana":"orchid", "United Kingdom":"orchid", "Austria":"orchid", "Japan":"orchid",
                 "New York":"grey", "Ireland": "grey",
-                "Paraguay":"slategrey", "Lebanon":"slategrey",
-                "Korea, South":"pink", "Florida":"pink", "Belgium":"pink",
+                "Lebanon":"slategrey",
+                "Korea, South":"hotpink", "Belgium":"hotpink","Florida":"hotpink",
                 "California":"darkgoldenrod",
                 "Los Angeles, California": "goldenrod", "Russia":"goldenrod",
                 "China":"orangered", "Chile":"orangered", "Switzerland":"orangered","Rhode Island":"orangered",
                 "Peru":"peru", "Maryland":"peru",
                 "Venezuela":"crimson", "Hong Kong":"crimson",
                 "World":"black"}
+light_colors={"cornflowerblue": (200/255,220/255,255/255),
+                "darkkhaki":"beige",
+                "turquoise": (190/255,255/255,255/255),
+                "dimgray": "lightgray",
+                "skyblue":(230/255,245/255,255/255),
+                "deepskyblue":(215/255,235/255,255/255),
+                "steelblue":(215/255,230/255,255/255),
+                "darkorchid":(240/255,220/255,255/255),
+                "gold":"cornsilk",
+                "limegreen":(210/255,245/255,210/255),
+                "forestgreen": (195/255,230/255,195/255),
+                "orange": "moccasin",
+                "orchid": "lavender",
+                "grey": (230/255,230/255,230/255),
+                "slategrey": "gainsboro",
+                "hotpink": "lavenderblush",
+                "darkgoldenrod": "wheat",
+                "goldenrod": "papayawhip",
+                "orangered":"mistyrose",
+                "peru": "wheat",
+                "crimson":"pink"
+                }
 
 populationD ={"World":7800}
 
@@ -44,8 +67,8 @@ class Countries:
         for country in self.countries:
             if country.name == c:
                  country.vis = 1
-                 return True
-        self.addOther(c)
+                 return country
+        return self.addOther(c)
 
     def get(self, c):
         for country in self.countries:
@@ -66,8 +89,7 @@ class Countries:
 
     def addOther(self,name):
         if "*" in name:
-            self.addState(name)
-            return 0
+            return self.addState(name)
         found = False
         pop = populationD[name] if name in populationD else 0
         if pop==0:
@@ -132,15 +154,16 @@ class Countries:
                             dt = datetime.datetime.strptime(row[1], '%Y-%m-%d').strftime('%m/%d')
                             c.testing = dt +"|{:,.0f}".format(int(row[5])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.2f}".format(float(row[7])) + "/K)"
                             break
+            return c
         else:
-            self.addState(name)
+            return self.addState(name)
 
 
     def addState(self,place):
         found = False
         ast = "*" if "*" in place else ""
-        place= place.replace(ast,"")
-        pop =populationD[place] if place in populationD else 0
+        place = place.replace(ast,"")
+        pop = populationD[place] if place in populationD else 0
         with open('csse_covid_19_time_series/time_series_covid19_confirmed_US.csv') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 line_count = 0
@@ -200,6 +223,10 @@ class Countries:
                             dt = datetime.datetime.strptime(newest.split("/")[1].split(".")[0],'%m-%d-%Y').strftime('%m/%d')
                             c.testing = dt +"|{:,.0f}".format(int(float(row[11]))) + " people tested ("+ "{:,.2f}".format(int(float(row[11]))/(c.pop*1000)) + "/K)"
                             break
+            return c
+        return 0
+
+
     def clean(self,c,type):
         if type == "cases":
             c.day = 0
@@ -273,6 +300,8 @@ class Country:
         self.pop = pop
         self.vis = 0
         self.color= color
+        self.defcolor= color
+        self.lightcolor = light_colors[color] if isinstance(color, str) else [min(1,x+0.5) for x in color]
         self.newcases = []
         self.newcasesPerM = []
         self.cases  = []
