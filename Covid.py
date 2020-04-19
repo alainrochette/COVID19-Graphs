@@ -31,6 +31,7 @@ class Graph():
         self.legend = None
         self.labels = None
         self.ylim = None
+        self.showAll= False
         self.selectedC  = None
         self.clickedG = None
         self.infoWidget = None
@@ -38,6 +39,7 @@ class Graph():
         self.removeWidget = None
         self.removeBox = None
         self.inInput = False
+        self.graphs = None
         self.axGraphs ={}
         self.graphsYlim ={}
         self.graphsNameheight={}
@@ -188,7 +190,7 @@ class Graph():
         self.infoBox.set_visible(True)
         self.infoWidget.text_disp.set_color([0.3, 0.3, 0.3])
         self.infoWidget.text_disp.set_size(8.2)
-        if self.clickedG != "BignewcasesPerM": plt.figure("All Graphs")
+        if not "Big" in self.clickedG: plt.figure("All Graphs")
 
     def press(self,event):
         if not self.inInput and event.key.isdigit():
@@ -222,9 +224,10 @@ class Graph():
         try:
             self.clickedG = self.axGraphs[event.inaxes]
         except KeyError:
-            self.clickedG = "BignewcasesPerM"
+            for g in self.graphs:
+                if "Big" in g: self.clickedG = g
         bottom, top = self.graphsYlim[self.clickedG]
-        nameheight = top / 27  if self.clickedG  == "BignewcasesPerM" else top/18     # Consol
+        nameheight = top / 27  if "Big" in self.clickedG  else top/18     # Consol
         maxy =  top
         self.inInput = False
         try:
@@ -234,11 +237,14 @@ class Graph():
                 count = len(self.graphLabels[self.clickedG])
                 index = math.floor((maxy-y)/nameheight)
                 i = 0
+                if "Big" not in self.clickedG: self.showAll  = True
                 self.select(self.graphLabels[self.clickedG][index])
 
-            elif  x > 2 and self.selectedC:
-                if self.removeBox: self.removeBox.set_visible(False)
-                if self.infoBox: self.infoBox.set_visible(False)
+            elif  x > 2:
+                if self.selectedC:
+                    if self.removeBox: self.removeBox.set_visible(False)
+                    if self.infoBox: self.infoBox.set_visible(False)
+                self.showAll  = False
                 self.select(None)
             else:
                 self.inInput = True
@@ -247,10 +253,15 @@ class Graph():
 
     def graph(self):
         self.prep()
-        graphs= ["casesPerM","newcasesPerM","deathsPerM","newdeathsPerM","BignewcasesPerM"]
+        self.graphs= ["casesPerM","newcasesPerM","deathsPerM","newdeathsPerM"]
         showAll = False
-        if self.clickedG and self.clickedG != "BignewcasesPerM": showAll = True
-        if showAll: graphs= ["BignewcasesPerM","casesPerM","newcasesPerM","deathsPerM","newdeathsPerM"]
+        if self.clickedG:
+            if self.showAll:
+                self.graphs = ["Big" + self.clickedG]+ self.graphs
+            else:
+                self.graphs.append("Big" + self.clickedG)
+        else:
+            self.graphs.append("BignewcasesPerM")
         sp = 1
         if self.fig: plt.close('all')
 
@@ -259,8 +270,8 @@ class Graph():
         self.removeWidget = None
         if self.All.days_since ==0: self.All.dates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in self.All.dates]
 
-        for g in graphs:
-            if g == "BignewcasesPerM":
+        for g in self.graphs:
+            if "Big" in g:
                 plt.rc('legend', fontsize=BIGGER_SIZE-0.5)
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='white',labelcolor='dimgray')
                 fig = plt.figure("Main",figsize=(15,7))
@@ -276,15 +287,16 @@ class Graph():
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='salmon')
             else:
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
-            if g != "BignewcasesPerM":
-                ax = fig.add_subplot(2,2,sp - showAll)
+            if not "Big" in g:
+                ax = fig.add_subplot(2,2,sp)
+                sp +=1
             self.axGraphs[ax] = g
 
 
 
             g2 = g.replace("PerM"," (per 1M people)").replace("Big","")
             plt.title("" + g2.replace("new","New ").title(),color="0.25",fontsize=11,fontname="DejaVu Sans")
-            if g == "BignewcasesPerM": plt.title("" + g2.replace("new","New ").title(),color="0.25",fontsize=14)
+            if "Big" in g: plt.title("" + g2.replace("new","New ").title(),color="0.25",fontsize=14)
 
             word = caseWord[self.All.days_since] if self.All.days_since in caseWord else str(self.All.days_since)+ "th case"
             plt.xlabel("Days since " + word,color='dimgray')
@@ -310,8 +322,8 @@ class Graph():
 
 
             if self.All.days_since==0:
-                if g == "BignewcasesPerM": plt.xticks(self.All.dates[::2])
-                if g != "BignewcasesPerM": plt.xticks(self.All.dates[::4])
+                if "Big" in g: plt.xticks(self.All.dates[::2])
+                if not "Big" in g: plt.xticks(self.All.dates[::4])
 
             maxx = self.getMaxX(g)
             minx = 35 if self.All.days_since==0 else 0
@@ -323,7 +335,8 @@ class Graph():
             handles ,self.graphLabels[g]  = ax.get_legend_handles_labels()
             fig.canvas.mpl_connect('key_press_event', self.press)
             fig.canvas.mpl_connect('button_press_event', self.onclick)
-            if g == "BignewcasesPerM":
+            if "Big" in g:
+                plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
                 inputBox = plt.axes([0.24, 0.675, 0.1, 0.055])
                 inputWidget = TextBox(inputBox, '+', initial="", hovercolor="lightgray")
                 inputWidget.on_submit(self.submit)
@@ -338,8 +351,8 @@ class Graph():
                 rax = plt.axes([0.23, 0.729, 0.1, 0.18], facecolor='white')
                 radio = RadioButtons(rax, ('My List', 'Europe', 'Asia', 'South America','States', 'Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
-            sp +=1
+
 
         if self.selectedC: self.country_info(self.selectedC)
-        if self.clickedG == "Main": plt.figure("All Graphs")
+        if self.clickedG and "Big" not in self.clickedG: plt.figure("All Graphs")
         plt.show()
