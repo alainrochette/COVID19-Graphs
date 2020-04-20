@@ -7,8 +7,7 @@ Python required. (https://www.python.org/downloads/)
 
 ### Instructions:
 
-* Run: `python3 main.py [--update --install]`
-  * `--update`:  Update data
+* Run: `python3 main.py [--install]`
   * `--install` : Install scipy, matplotlib, and git (if OSX)
  
 * Graphs:
