@@ -27,11 +27,11 @@ Python required. (https://www.python.org/downloads/)
 
 # Preview
 
-![Image of New Cases](https://github.com/alainrochette/COVID19-Graphs/blob/master/Example%20Images/newCases.png)
+![Image of Selected](https://github.com/alainrochette/COVID19-Graphs/blob/master/Example%20Images/selected.png)
 ___
 ![Image of All](https://github.com/alainrochette/COVID19-Graphs/blob/master/Example%20Images/all.png)
 ___
-![Image of Selected](https://github.com/alainrochette/COVID19-Graphs/blob/master/Example%20Images/selected.png)
+![Image of New Cases](https://github.com/alainrochette/COVID19-Graphs/blob/master/Example%20Images/newCases.png)
 
 
 ## Data Sources:
