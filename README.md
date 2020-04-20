@@ -13,7 +13,7 @@ Graph multiple countries' COVID-19 timeline in one window. Python required.
   * Use + to add any Place (Country, US City, US State)
     - *Examples: "Lithunia", "Los Angeles, California", "Texas"
   * Click Place in legend for More Info / to Remove.
-  * Choose starting date (days since Xth case, default is 0)
+  * Choose starting date/days since Xth case
  
 
 * Optional:
