@@ -433,7 +433,6 @@ class Graph():
 
                 self.LUtext= ax.text(0.958, 1, "Last Updated:\n "+self.lastUpdated.strftime("%m/%d %H:%M"), transform=ax.transAxes, fontsize=7,
                         verticalalignment='top', color ="darkgray")
-                self.LUtext.set_visible(False)
 
 
                 active_region ={"My List":0, "Europe":1,"Asia":2, "South America":3,"States":4,"Other":5}
