@@ -12,7 +12,8 @@ Python required. (https://www.python.org/downloads/)
  
 * Graphs:
   * Use + to add any Place (Country, US City, US State)
-    - *Examples: "Lithunia", "Los Angeles, California", "Texas"
+  
+     *e.g.: "Lithunia", "Los Angeles, California", "Texas"*
   * Click Place in legend for More Info / to Remove.
   * Choose starting date/days since Xth case
  
