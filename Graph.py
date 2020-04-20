@@ -12,6 +12,7 @@ from datetime import datetime
 import pickle
 #[]   +    =     {}
 
+plt.ion()
 
 caseWord = {0: "Jan 22", 1:"first case", 2:"second case", 3:"third case"}
 SMALL_SIZE = 7
@@ -27,14 +28,13 @@ class Graph():
         self.params = False
         self.scale = 1
         self.limit = 12
-        self.legend = None
-        self.labels = None
         self.ylim = None
         self.showAll= False
         self.selectedC  = None
         self.clickedG = None
         self.infoWidget = None
         self.infoBox = None
+        self.inputWidget = None
         self.removeWidget = None
         self.removeBox = None
         self.LUtext = None
@@ -44,7 +44,9 @@ class Graph():
         self.confirmText= None
         self.inInput = False
         self.graphs = None
+        self.graphLines ={}
         self.axGraphs ={}
+        self.graphsAx ={}
         self.graphsYlim ={}
         self.graphsNameheight={}
         self.graphLabels ={}
@@ -102,7 +104,7 @@ class Graph():
             if c.vis: d[c.name]=getattr(c,type)[-1]
         self.All.countries = {self.All.get(k): getattr(self.All.get(k),type) for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}.keys()
 
-    def prep(self,):
+    def prep(self):
         self.setParams()
         self.inInput = False
         for c in self.All.countries:
@@ -125,12 +127,38 @@ class Graph():
                 self.selectedC = self.All.show(text)
             else:
                 self.selectedC = self.All.addOther(text)
-            self.select(self.selectedC.name)
+            self.inputWidget.set_val("")
+            self.graph(True)
 
-    def remove(self,text):
+
+    def remove(self,event):
         self.All.hide(self.selectedC.name)
+        for graph in self.graphs:
+            line = self.graphLines[graph][self.selectedC.name][0]
+            line.remove()
+            del line
+            self.graphLabels[graph].remove(self.selectedC.name)
+            ax = self.graphsAx[graph]
+            ax.relim()
+            ax.autoscale_view()
         self.select(None)
-            # self.graph()
+        if self.removeBox: self.removeBox.set_visible(False)
+        if self.infoBox: self.infoBox.set_visible(False)
+        self.infoWidget = None
+        self.infoBox = None
+        self.removeWidget = None
+        self.removeBox = None
+        self.draw()
+
+
+    def draw(self):
+        for graph in self.graphs:
+            legFontSize = SMALL_SIZE - 1 if "Big" not in graph else BIGGER_SIZE-0.5
+            self.graphsAx[graph].legend(fontsize = legFontSize,fancybox=True,loc="upper left", ncol=1)
+        plt.figure("Main")
+        plt.draw()
+        plt.figure("All Graphs")
+        plt.draw()
 
     def change_start(self,text):
         try:
@@ -179,6 +207,8 @@ class Graph():
             self.infoBox = plt.axes([0.065, startheight, 0.16, height])
             self.infoBox.set_frame_on(False)
             self.infoWidget = TextBox(self.infoBox, '', txt)
+        self.infoWidget.text_disp.set_color([0.3, 0.3, 0.3])
+        self.infoWidget.text_disp.set_size(8.2)
 
         fancybox = mpatches.FancyBboxPatch((0,0), 1,1, edgecolor=c.color,
                                    facecolor="white", boxstyle="round,pad=0",
@@ -195,11 +225,10 @@ class Graph():
 
         self.removeBox.set_visible(True)
         self.infoBox.set_visible(True)
-        self.infoWidget.text_disp.set_color([0.3, 0.3, 0.3])
-        self.infoWidget.text_disp.set_size(8.2)
         if not "Big" in self.clickedG: plt.figure("All Graphs")
 
     def press(self,event):
+        if event.key == "escape": self.toggleConfirm(False)
         if not self.inInput and event.key.isdigit():
             if int(event.key) <= len(self.graphLabels[self.clickedG]): self.select(self.graphLabels[self.clickedG][int(event.key)-1])
             return
@@ -212,15 +241,24 @@ class Graph():
                 self.select(self.graphLabels[self.clickedG][new_index])
 
     def select(self,selected):
-        if not selected: self.selectedC = None
-        for x in self.graphLabels[self.clickedG]:
-            c =  self.All.get(x)
-            if x == selected or not selected:
-                c.color = c.defcolor
-                if selected: self.selectedC = c
-            else:
-                c.color = c.lightcolor
-        self.graph()
+        if not selected:
+            self.selectedC = None
+            self.toggleConfirm(False)
+        if self.removeBox: self.removeBox.set_visible(False)
+        if self.infoBox: self.infoBox.set_visible(False)
+
+        for graph in self.graphs:
+            for lname in self.graphLabels[graph]:
+                c =  self.All.get(lname)
+                if c:
+                    line =self.graphLines[graph][lname][0]
+                    if lname == selected or not selected:
+                        line.set_color(c.defcolor)
+                        if selected: self.selectedC = c
+                    else:
+                        line.set_color(c.lightcolor)
+        if self.selectedC: self.country_info(self.selectedC)
+        self.draw()
 
     def onclick(self, event):
         if not event:
@@ -233,28 +271,25 @@ class Graph():
         except KeyError:
             for g in self.graphs:
                 if "Big" in g: self.clickedG = g
-
         bottom, top = self.graphsYlim[self.clickedG]
         nameheight = top / 27  if "Big" in self.clickedG  else top/18     # Consol
         maxy =  top
         self.inInput = False
         self.showAll= False
         try:
-            if x > 2 and x < 45 and  y < maxy and y > maxy - (nameheight*len(self.graphLabels[self.clickedG])):
+            if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 10 and  y < maxy and y > maxy - (nameheight*len(self.graphLabels[self.clickedG])):
                 if self.removeBox: self.removeBox.set_visible(False)
                 if self.infoBox: self.infoBox.set_visible(False)
                 count = len(self.graphLabels[self.clickedG])
                 index = math.floor((maxy-y)/nameheight)
                 i = 0
-                if "Big" not in self.clickedG: self.showAll  = True
                 self.select(self.graphLabels[self.clickedG][index])
-
             elif  x > 2:
                 if self.selectedC:
-                    if self.removeBox: self.removeBox.set_visible(False)
-                    if self.infoBox: self.infoBox.set_visible(False)
-                self.showAll  = False
+                    self.showAll  = False
                 self.select(None)
+                if "Big" not in self.clickedG: self.graph()
+
             else:
                 self.inInput = True
         except TypeError:
@@ -276,27 +311,34 @@ class Graph():
         self.load("My List")
 
     def toggleConfirm(self, event):
-        self.confirmBox.set_visible(not self.confirmBox.get_visible())
-        self.confirmText.set_visible(not self.confirmText.get_visible())
+        if not event:
+            self.confirmBox.set_visible(False)
+            self.confirmText.set_visible(False)
+        else:
+            self.confirmBox.set_visible(not self.confirmBox.get_visible())
+            self.confirmText.set_visible(not self.confirmText.get_visible())
+        plt.draw()
 
-    def graph(self):
+    def graph(self, addC=False):
         self.prep()
         self.graphs= ["casesPerM","newcasesPerM","deathsPerM","newdeathsPerM"]
-        showAll = False
+        self.showAll = False
         if self.clickedG:
             if self.showAll:
-                self.graphs = ["Big" + self.clickedG]+ self.graphs
+                self.graphs = ["Big" + self.clickedG.replace("Big","")]+ self.graphs
             else:
-                self.graphs.append("Big" + self.clickedG)
+                self.graphs.append("Big" + self.clickedG.replace("Big",""))
         else:
             self.graphs.append("BignewcasesPerM")
-        sp = 1
-        if self.fig: plt.close('all')
 
+        if (self.All.days_since ==0 or "/" in str(self.All.days_since)): self.All.dates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in self.All.dates]
+
+        sp = 1
+
+        if self.fig: plt.close('all')
 
         self.infoWidget = None
         self.removeWidget = None
-        if self.All.days_since ==0 or "/" in str(self.All.days_since): self.All.dates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in self.All.dates]
 
         for g in self.graphs:
             if "Big" in g:
@@ -306,7 +348,6 @@ class Graph():
                 ax = fig.add_subplot(111)
             else:
                 plt.rc('legend', fontsize=SMALL_SIZE-1)
-                # plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='white',labelcolor='dimgray')
                 self.fig = plt.figure("All Graphs",figsize=(15,7))
                 fig  = self.fig
 
@@ -319,6 +360,7 @@ class Graph():
                 ax = fig.add_subplot(2,2,sp)
                 sp +=1
             self.axGraphs[ax] = g
+            self.graphsAx[g] = ax
 
 
 
@@ -332,6 +374,8 @@ class Graph():
             if self.All.days_since ==0 or "/" in str(self.All.days_since): plt.xlabel("Date")
             # g = g.replace("Big","")
             self.order(g.replace("Big",""))
+            self.graphLines[g] = {}
+
             for c in self.All.countries:
                 if c.vis:
                     gx = self.All.dates if self.All.days_since == 0 or "/" in str(self.All.days_since) else c.x
@@ -341,12 +385,10 @@ class Graph():
                     if c.name== "World":
                         if "PerM" in g: plt.plot(gx, ysmoothed[0:len(gx)],'k--',label= c.name)
                     else:
-                        plt.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name)
+                        self.graphLines[g][c.name]= plt.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name)
 
-
-            self.legend = plt.legend(fancybox=True,loc="upper left", ncol=1)
+            plt.legend(fancybox=True,loc="upper left", ncol=1)
             self.graphsYlim[g] = ax.get_ylim()
-
 
 
             if self.All.days_since==0 or "/" in str(self.All.days_since):
@@ -359,16 +401,14 @@ class Graph():
             plt.xlim(minx,maxx)
             plt.subplots_adjust(wspace=0.07, hspace=0.3, left=0.06,bottom=0.06,right=0.96, top=0.9)
 
-            # self.ylim = plt.ylim()
-            # handles, self.labels = ax.get_legend_handles_labels()
             handles ,self.graphLabels[g]  = ax.get_legend_handles_labels()
             fig.canvas.mpl_connect('key_press_event', self.press)
             fig.canvas.mpl_connect('button_press_event', self.onclick)
             if "Big" in g:
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
                 inputBox = plt.axes([0.24, 0.675, 0.1, 0.055])
-                inputWidget = TextBox(inputBox, '+', initial="", hovercolor="lightgray")
-                inputWidget.on_submit(self.submit)
+                self.inputWidget = TextBox(inputBox, '+', initial="", hovercolor="lightgray")
+                self.inputWidget.on_submit(self.submit)
 
                 startBox = plt.axes([0.85, 0.91, 0.03, 0.035])
                 startWidget = TextBox(startBox, 'Start from case/date: ', initial='', hovercolor="lightgray")
@@ -386,17 +426,14 @@ class Graph():
                         verticalalignment='top', color ="darkgray")
                 self.confirmText.set_visible(False)
 
-
                 self.refreshBox = plt.axes([0.92, 0.91, 0.06, 0.035])
                 refreshWidget = Button(self.refreshBox, 'Refresh Data',color="whitesmoke" ,hovercolor="lightgray")
                 refreshWidget.label.set_fontsize(7)
                 refreshWidget.on_clicked(self.toggleConfirm)
-                # self.refreshBox.set_visible(False)
 
                 self.LUtext= ax.text(0.958, 1, "Last Updated:\n "+self.lastUpdated.strftime("%m/%d %H:%M"), transform=ax.transAxes, fontsize=7,
                         verticalalignment='top', color ="darkgray")
-                # self.LUtext.set_visible(False)
-
+                self.LUtext.set_visible(False)
 
 
                 active_region ={"My List":0, "Europe":1,"Asia":2, "South America":3,"States":4,"Other":5}
@@ -404,11 +441,8 @@ class Graph():
                 radio = RadioButtons(rax, ('My List', 'Europe', 'Asia', 'South America','States', 'Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
 
-                # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-
-
-
-        if self.selectedC: self.country_info(self.selectedC)
+        if self.selectedC: self.select(self.selectedC.name)
         plt.figure("Main")
         if self.clickedG and "Big" not in self.clickedG: plt.figure("All Graphs")
+        plt.ioff()
         plt.show()

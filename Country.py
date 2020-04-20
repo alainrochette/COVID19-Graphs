@@ -55,7 +55,7 @@ populationD ={"World":7800}
 class Countries:
     def __init__(self,region,days_since=0,colors=None):
         self.days_since = days_since
-        self.countries = []
+        self.countries = list()
         self.dates = []
         self.countries_list = []
         self.regions = {}
@@ -65,14 +65,19 @@ class Countries:
 
     def show(self, c):
         for country in self.countries:
-            if country.name == c:
+            if country.name.replace(" ","").lower() == c.replace(" ","").lower():
                  country.vis = 1
+                 self.countries_list.append(country.name)
+                 self.countries_list = list(set(self.countries_list))
+                 with open('myCache/My_List.txt', 'wb') as fp:
+                     pickle.dump(self.countries_list, fp)
                  return country
         return self.addOther(c)
 
     def get(self, c):
+        self.countries = list(self.countries)
         for country in self.countries:
-            if country.name == c: return country
+            if country.name.replace(" ","").lower() == c.replace(" ","").lower(): return country
         return 0
 
     def hide(self, c):
@@ -126,6 +131,7 @@ class Countries:
                 if found:
                     self.clean(c,"cases")
         if found:
+            self.countries.append(c)
             if self.region == "My List":
                 with open('myCache/My_List.txt',  'wb') as fp:
                     pickle.dump(list(set(self.countries_list)), fp)
@@ -190,6 +196,7 @@ class Countries:
                 if found:
                     self.clean(c,"cases")
         if found:
+            self.countries.append(c)
             if self.region == "My List":
                 with open('myCache/My_List.txt',  'wb') as fp:
                     pickle.dump(list(set(self.countries_list)), fp)
@@ -320,7 +327,8 @@ class Country:
         self.x =[]
         self.GF=[]
         self.testing = ""
-        All.countries = list(All.countries)
+        # All.countries = list(set(All.countries))
         All.country_colors[name] = color
         All.countries_list.append(name)
-        All.countries.append(self)
+        # All.countries.append(self)
+        # All.countries = list(set(All.countries))
