@@ -5,10 +5,6 @@ import os
 import sys
 from datetime import datetime
 
-now = datetime.now()
-
-
-
 
 if "--install" in sys.argv:
     os.system("clear")
