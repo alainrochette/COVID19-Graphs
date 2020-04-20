@@ -73,7 +73,7 @@ class Graph():
         return gf
 
     def averageGrowthFactor(self,c):
-        return sum(c.GF[-3:])/3
+        return sum(c.GF[-6:])/6
 
     def showL(self,c,data):
     	return [i*c.vis for i in data]
@@ -128,9 +128,10 @@ class Graph():
 
     def change_start(self,text):
         try:
-            if int(text) != self.All.days_since:
-                # plt.close('all')
+            if (text.isdigit() and int(text) != self.All.days_since):
                 self.load(self.All.region,int(text))
+            elif "/" in text and text in self.All.dates:
+                self.load(self.All.region,text)
         except ValueError:
             pass
 
@@ -146,14 +147,14 @@ class Graph():
         self.selectedC = c
         name = c.name.split(",")[0] if "," in c.name else c.name
 
-        txt ='{:15.15}  ({:3.2f} GF)'.format(name, self.averageGrowthFactor(c))
-        if c.pop < 0.1: txt +='\n{}         {:,.1f}K'.format("Population:", round(c.pop*1000,2))
-        if c.pop >= 0.1: txt +='\n{}         {:,.1f}M'.format("Population:", round(c.pop,2)) #{:15s}
+        txt ='{:18.18}  ({:3.2f} GF)'.format(name, self.averageGrowthFactor(c))
+        if c.pop < 0.1: txt +='\n{}  {:,.1f}K'.format("Population:", round(c.pop*1000,2))
+        if c.pop >= 0.1: txt +='\n{}  {:,.1f}M'.format("Population:", round(c.pop,2)) #{:15s}
 
         if c.testing != "" and len(c.testing.split("|")[1]) < 33: txt +="\n"
 
-        txt +='\n{}   {:,.0f} ({:,.0f}/M)'.format("Cases:", c.cases[-1], c.casesPerM[-1])
-        txt +='\n{} {:,.0f}  ({:,.0f}/M)\n'.format("Deaths:", c.deaths[-1], c.deathsPerM[-1])
+        txt +='\n{}   {:,.0f} {} ({:,.0f}/M)'.format("Cases:", c.cases[-1], " "*(20-len(str(c.casesPerM[-1]))),c.casesPerM[-1])
+        txt +='\n{} {:,.0f} {} ({:,.0f}/M)\n'.format("Deaths:", c.deaths[-1], " "*(25-len(str(c.deathsPerM[-1]))),c.deathsPerM[-1])
 
         if c.testing != "":
             dt = c.testing.split("|")[0]
@@ -226,10 +227,12 @@ class Graph():
         except KeyError:
             for g in self.graphs:
                 if "Big" in g: self.clickedG = g
+
         bottom, top = self.graphsYlim[self.clickedG]
         nameheight = top / 27  if "Big" in self.clickedG  else top/18     # Consol
         maxy =  top
         self.inInput = False
+        self.showAll= False
         try:
             if x > 2 and x < 45 and  y < maxy and y > maxy - (nameheight*len(self.graphLabels[self.clickedG])):
                 if self.removeBox: self.removeBox.set_visible(False)
@@ -268,7 +271,7 @@ class Graph():
 
         self.infoWidget = None
         self.removeWidget = None
-        if self.All.days_since ==0: self.All.dates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in self.All.dates]
+        if self.All.days_since ==0 or "/" in str(self.All.days_since): self.All.dates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in self.All.dates]
 
         for g in self.graphs:
             if "Big" in g:
@@ -301,12 +304,12 @@ class Graph():
             word = caseWord[self.All.days_since] if self.All.days_since in caseWord else str(self.All.days_since)+ "th case"
             plt.xlabel("Days since " + word,color='dimgray')
 
-            if self.All.days_since ==0: plt.xlabel("Date")
+            if self.All.days_since ==0 or "/" in str(self.All.days_since): plt.xlabel("Date")
             # g = g.replace("Big","")
             self.order(g.replace("Big",""))
             for c in self.All.countries:
                 if c.vis:
-                    gx = self.All.dates if self.All.days_since == 0 else c.x
+                    gx = self.All.dates if self.All.days_since == 0 or "/" in str(self.All.days_since) else c.x
                     gy =getattr(c,g.replace("Big",""))[0:len(gx)]
                     if len(gy) < len(gx): gx = gx[0:len(gy)]
                     ysmoothed = gaussian_filter1d(gy, sigma=1.1)
@@ -321,12 +324,13 @@ class Graph():
 
 
 
-            if self.All.days_since==0:
+            if self.All.days_since==0 or "/" in str(self.All.days_since):
                 if "Big" in g: plt.xticks(self.All.dates[::2])
                 if not "Big" in g: plt.xticks(self.All.dates[::4])
 
             maxx = self.getMaxX(g)
-            minx = 35 if self.All.days_since==0 else 0
+            minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
+            minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
             plt.xlim(minx,maxx)
             plt.subplots_adjust(wspace=0.07, hspace=0.3, left=0.06,bottom=0.06,right=0.96, top=0.9)
 
@@ -342,7 +346,7 @@ class Graph():
                 inputWidget.on_submit(self.submit)
 
                 startBox = plt.axes([0.85, 0.91, 0.03, 0.035])
-                startWidget = TextBox(startBox, 'Start from case: ', initial='', hovercolor="lightgray")
+                startWidget = TextBox(startBox, 'Start from case/date: ', initial='', hovercolor="lightgray")
                 startWidget.label.set_color("0.5")
                 startWidget.label.set_size(8)
                 startWidget.on_submit(self.change_start)
@@ -354,5 +358,6 @@ class Graph():
 
 
         if self.selectedC: self.country_info(self.selectedC)
+        plt.figure("Main")
         if self.clickedG and "Big" not in self.clickedG: plt.figure("All Graphs")
         plt.show()

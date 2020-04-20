@@ -228,10 +228,12 @@ class Countries:
 
 
     def clean(self,c,type):
+
+        days_since = 0 if "/" in str(self.days_since) else self.days_since
         if type == "cases":
             c.day = 0
             for cc in range(0,len(c.allcases)):
-                if c.allcases[cc]  > self.days_since - 1 and c.day==0:
+                if c.allcases[cc]  > days_since - 1 and c.day==0:
                     c.day = cc
                     break
             c.days = len(self.dates)-c.day
