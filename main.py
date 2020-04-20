@@ -3,7 +3,6 @@ from Graph import *
 import pickle
 import os
 import sys
-from datetime import datetime
 
 
 if "--install" in sys.argv:
