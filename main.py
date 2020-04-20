@@ -1,32 +1,14 @@
-from Covid import *
+
+from Graph import *
 import pickle
 import os
 import sys
+from datetime import datetime
+
+now = datetime.now()
 
 
-DAYS_SINCE = 0
 
-countries_i = [           #[------ Choose colors in Country.py -----]
-"Chile",
-"Argentina",
-"Miami-Dade, Florida",
-"Florida",
-"US",
-"Spain",
-"Italy",
-"United Kingdom",
-"Netherlands",
-"New York",
-]
-
-
-try:
-    with open('My_List.txt', 'rb') as fp:
-        countries = list(set(pickle.load(fp)))
-except FileNotFoundError:
-    countries = countries_i
-    with open('My_List.txt', 'wb') as fp:
-        pickle.dump(countries, fp)
 
 if "--install" in sys.argv:
     os.system("clear")
@@ -44,6 +26,17 @@ if "--update" in sys.argv:
     print("\n---- Updating Testing Data ----\n")
     os.system("svn export https://github.com/owid/covid-19-data.git/trunk/public/data/testing --force")
     os.system("clear")
+    lastUpdated = datetime.now()
+    with open('myCache/lastUpdated.txt',  'wb') as fp:
+        pickle.dump(lastUpdated, fp)
+else:
+    try:
+        with open('myCache/lastUpdated.txt',  'rb') as fp:
+            lastUpdated = pickle.load(fp)
+    except FileNotFoundError:
+        lastUpdated = "???"
+        with open('myCache/lastUpdated.txt',  'wb') as fp:
+            pickle.dump(lastUpdated, fp)
 
-graph = Graph()
+graph = Graph(lastUpdated)
 graph.load("My List")

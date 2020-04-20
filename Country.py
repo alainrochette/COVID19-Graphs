@@ -82,7 +82,8 @@ class Countries:
                  self.countries_list = list(set(self.countries_list))
                  self.countries_list.remove(country.name)
                  if self.region == "My List":
-                     with open('My_List.txt', 'wb') as fp:
+
+                     with open('myCache/My_List.txt',  'wb') as fp:
                          pickle.dump(self.countries_list, fp)
                  return True
         return False
@@ -126,7 +127,7 @@ class Countries:
                     self.clean(c,"cases")
         if found:
             if self.region == "My List":
-                with open('My_List.txt', 'wb') as fp:
+                with open('myCache/My_List.txt',  'wb') as fp:
                     pickle.dump(list(set(self.countries_list)), fp)
             with open('csse_covid_19_time_series/time_series_covid19_deaths_global.csv') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
@@ -190,7 +191,7 @@ class Countries:
                     self.clean(c,"cases")
         if found:
             if self.region == "My List":
-                with open('My_List.txt', 'wb') as fp:
+                with open('myCache/My_List.txt',  'wb') as fp:
                     pickle.dump(list(set(self.countries_list)), fp)
             with open('csse_covid_19_time_series/time_series_covid19_deaths_US.csv') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
@@ -283,13 +284,13 @@ class Countries:
                                     "Cuba", "Cote d'Ivoire", "Reunion", "Costa Rica", "Haiti"],
                         }
         try:
-            with open('My_List.txt', 'rb') as fp:
+            with open('myCache/My_List.txt',  'rb') as fp:
                 mycountries = list(set(pickle.load(fp)))
         except FileNotFoundError:
             mycountries = [ "Chile","Argentina","Miami-Dade, Florida", "US",
                             "Spain", "Italy", "United Kingdom", "Netherlands",
                             "New York"]
-            with open('My_List.txt', 'wb') as fp:
+            with open('myCache/My_List.txt',  'wb') as fp:
                 pickle.dump(mycountries, fp)
         self.regions["My List"] = mycountries
         for c in self.regions[self.region]:

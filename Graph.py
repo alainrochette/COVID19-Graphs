@@ -8,10 +8,9 @@ import math
 import os
 from scipy.ndimage.filters import gaussian_filter1d
 import textwrap
-# plt.ion()
-# import mpld3
-# from mpld3 import plugins
-
+from datetime import datetime
+import pickle
+#[]   +    =     {}
 
 
 caseWord = {0: "Jan 22", 1:"first case", 2:"second case", 3:"third case"}
@@ -22,7 +21,7 @@ BIGGER_SIZE = 10
 
 
 class Graph():
-    def __init__(self):
+    def __init__(self, lastUpdated):
         self.All  = None
         self.fig = None
         self.params = False
@@ -38,17 +37,24 @@ class Graph():
         self.infoBox = None
         self.removeWidget = None
         self.removeBox = None
+        self.LUtext = None
+        self.refreshBox = None
+        self.updateBox = None
+        self.confirmBox = None
+        self.confirmText= None
         self.inInput = False
         self.graphs = None
         self.axGraphs ={}
         self.graphsYlim ={}
         self.graphsNameheight={}
         self.graphLabels ={}
+        self.lastUpdated = lastUpdated
 
     def load(self,region, days_since=0):
         self.limit  = 120 if region == "My List" else 12
         country_colors =  self.All.country_colors if self.All else None
         self.All = Countries(region,days_since,colors=country_colors)
+        if self.lastUpdated == "???": self.lastUpdated = datetime.strptime(self.All.dates[-1], '%m/%d/%y')
         self.graph()
 
     def setParams(self):
@@ -254,6 +260,25 @@ class Graph():
         except TypeError:
             pass
 
+    def refreshData(self, event):
+        os.system("clear")
+        print("---- Updating World Data ----\n")
+        os.system("svn export https://github.com/CSSEGISandData/COVID-19.git/trunk/csse_covid_19_data/csse_covid_19_time_series --force")
+        print("\n---- Updating US Data ----\n")
+        os.system("svn export https://github.com/CSSEGISandData/COVID-19.git/trunk/csse_covid_19_data/csse_covid_19_daily_reports_us --force")
+        print("\n---- Updating Testing Data ----\n")
+        os.system("svn export https://github.com/owid/covid-19-data.git/trunk/public/data/testing --force")
+        os.system("clear")
+        lastUpdated = datetime.now()
+        with open('myCache/lastUpdated.txt',  'wb') as fp:
+            pickle.dump(lastUpdated, fp)
+        self.lastUpdated = lastUpdated
+        self.load("My List")
+
+    def toggleConfirm(self, event):
+        self.confirmBox.set_visible(not self.confirmBox.get_visible())
+        self.confirmText.set_visible(not self.confirmText.get_visible())
+
     def graph(self):
         self.prep()
         self.graphs= ["casesPerM","newcasesPerM","deathsPerM","newdeathsPerM"]
@@ -351,10 +376,36 @@ class Graph():
                 startWidget.label.set_size(8)
                 startWidget.on_submit(self.change_start)
 
+                self.confirmBox = plt.axes([0.92, 0.8, 0.06, 0.035])
+                confirmWidget = Button(self.confirmBox , 'Confirm',color="whitesmoke" ,hovercolor="lightgray")
+                confirmWidget.label.set_fontsize(7)
+                confirmWidget.on_clicked(self.refreshData)
+                self.confirmBox.set_visible(False)
+
+                self.confirmText= ax.text(0.958, 0.87, "Refresh takes\n up to 20 secs.", transform=ax.transAxes, fontsize=7,
+                        verticalalignment='top', color ="darkgray")
+                self.confirmText.set_visible(False)
+
+
+                self.refreshBox = plt.axes([0.92, 0.91, 0.06, 0.035])
+                refreshWidget = Button(self.refreshBox, 'Refresh Data',color="whitesmoke" ,hovercolor="lightgray")
+                refreshWidget.label.set_fontsize(7)
+                refreshWidget.on_clicked(self.toggleConfirm)
+                # self.refreshBox.set_visible(False)
+
+                self.LUtext= ax.text(0.958, 1, "Last Updated:\n "+self.lastUpdated.strftime("%m/%d %H:%M"), transform=ax.transAxes, fontsize=7,
+                        verticalalignment='top', color ="darkgray")
+                # self.LUtext.set_visible(False)
+
+
+
                 active_region ={"My List":0, "Europe":1,"Asia":2, "South America":3,"States":4,"Other":5}
                 rax = plt.axes([0.23, 0.729, 0.1, 0.18], facecolor='white')
                 radio = RadioButtons(rax, ('My List', 'Europe', 'Asia', 'South America','States', 'Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
+
+                # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
 
 
         if self.selectedC: self.country_info(self.selectedC)
