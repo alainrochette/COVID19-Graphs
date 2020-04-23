@@ -12,7 +12,7 @@ from datetime import datetime
 import pickle
 #[]   +    =     {}
 
-plt.ion()
+
 
 caseWord = {0: "Jan 22", 1:"first case", 2:"second case", 3:"third case"}
 SMALL_SIZE = 7
@@ -25,6 +25,7 @@ class Graph():
     def __init__(self, lastUpdated):
         self.All  = None
         self.fig = None
+        self.big = "newcasesPerM"
         self.params = False
         self.scale = 1
         self.limit = 12
@@ -37,6 +38,7 @@ class Graph():
         self.inputWidget = None
         self.removeWidget = None
         self.removeBox = None
+        self.startWidget = None
         self.LUtext = None
         self.refreshBox = None
         self.updateBox = None
@@ -44,18 +46,23 @@ class Graph():
         self.confirmText= None
         self.inInput = False
         self.graphs = None
+        self.places = []
         self.graphLines ={}
         self.axGraphs ={}
         self.graphsAx ={}
-        self.graphsYlim ={}
+        self.graphsLabels={}
+        self.graphsHandles={}
         self.graphsNameheight={}
-        self.graphLabels ={}
         self.lastUpdated = lastUpdated
+        self.dayBefore = - 1
+        self.graphDateLine = {}
+        self.setParams()
 
     def load(self,region, days_since=0):
         self.limit  = 120 if region == "My List" else 12
         country_colors =  self.All.country_colors if self.All else None
         self.All = Countries(region,days_since,colors=country_colors)
+        self.countries = self.All.countries
         if self.lastUpdated == "???": self.lastUpdated = datetime.strptime(self.All.dates[-1], '%m/%d/%y')
         self.graph()
 
@@ -86,75 +93,131 @@ class Graph():
     def showL(self,c,data):
     	return [i*c.vis for i in data]
 
-    def getMaxY(self,type):
-        sum = []
-        for c in self.All.countries:
-            if c.name != "World": sum += self.showL(c,getattr(c,type))
-        return max(sum)*(1.05)
-
-    def getMaxX(self,type):
-        sum = []
-        for c in self.All.countries:
-            if c.name != "World": sum += self.showL(c,c.x)
-        return max(sum)*(1.05)
-
     def order(self,type):
         d ={}
-        for c in self.All.countries:
-            if c.vis: d[c.name]=getattr(c,type)[-1]
-        self.All.countries = {self.All.get(k): getattr(self.All.get(k),type) for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}.keys()
+        for c in self.places:
+            d[c.name]=getattr(c,type)[-1]
+        self.places = {self.All.get(k): getattr(self.All.get(k),type) for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}.keys()
 
-    def prep(self):
-        self.setParams()
-        self.inInput = False
-        for c in self.All.countries:
-            if c.vis and not c.newcasesPerM:
-                c.newcasesPerM = [x/c.pop for x in c.newcases]
-                c.casesPerM = [x/c.pop for x in c.cases]
-                c.deathsPerM = [x/c.pop for x in c.deaths]
-                c.newdeathsPerM = [x/c.pop for x in c.newdeaths]
-                c.GF = self.growthFactor(c)
-        self.order("casesPerM")
-        count=0
-        for c in self.All.countries:
-            c.vis = True if count < self.limit else False
-            count += 1
+    def labelOrder(self,handles,labels,type):
+        d ={}
+        for lab in labels:
+            c = self.All.get(lab)
+            d[c.name]=getattr(c,type)[-1]
+        labelsOrder = list({k: getattr(self.All.get(k),type) for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}.keys())
+        return [handles[labels.index(label)] for label in labelsOrder], labelsOrder
 
-    def submit(self,text):
-        self.limit = 120
+    def prep(self, c=None):
+        if not c:
+            for c in self.countries:
+                if not c.newcasesPerM:
+                    c.newcasesPerM = [x/c.pop for x in c.newcases]
+                    c.casesPerM = [x/c.pop for x in c.cases]
+                    c.deathsPerM = [x/c.pop for x in c.deaths]
+                    c.newdeathsPerM = [x/c.pop for x in c.newdeaths]
+                    c.GF = self.growthFactor(c)
+        elif not c.newcasesPerM:
+            c.newcasesPerM = [x/c.pop for x in c.newcases]
+            c.casesPerM = [x/c.pop for x in c.cases]
+            c.deathsPerM = [x/c.pop for x in c.deaths]
+            c.newdeathsPerM = [x/c.pop for x in c.newdeaths]
+            c.GF = self.growthFactor(c)
+
+    def add(self,text, loading=False):
+        if not loading: self.limit = 120
         if text != "":
             if self.All.get(text):
                 self.selectedC = self.All.show(text)
             else:
                 self.selectedC = self.All.addOther(text)
-            self.inputWidget.set_val("")
-            self.graph(True)
+            if self.selectedC:
+                c = self.selectedC
+                if not loading:self.countries.append(c)
+                self.prep(c)
+                for g in self.graphs:
+                    ax = self.graphsAx[g]
+                    gx = c.dates if self.All.days_since == 0 or "/" in str(self.All.days_since) else c.x
+                    gy =getattr(c,g.replace("Big",""))[0:len(gx)]
+                    if len(gy) < len(gx): gx = gx[0:len(gy)]
+                    ysmoothed = gaussian_filter1d(gy, sigma=1)
+                    if c.name== "World":
+                        if "PerM" in g: ax.plot(gx, ysmoothed[0:len(gx)],'k--',label= c.name)
+                    else:
+                        self.graphLines[g][c.name]= ax.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name)
+
+                    ax.relim()
+                    ax.autoscale_view()
+
+
+                    handles, labels = ax.get_legend_handles_labels()
+                    # sort both labels and handles by labels
+                    # self.order(g.replace("Big",""))
+                    newhandles, newlabels = self.labelOrder(handles,labels, g.replace("Big",""))
+                    self.graphsHandles[g] = newhandles
+                    self.graphsLabels[g] = newlabels
+
+                    # maxx = ax.get_xlim()[1]*1.04
+                    minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
+                    minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
+                    ax.set_xlim(left=minx)
+
+                    if self.firstAdd:
+                        if self.All.days_since==0 or "/" in str(self.All.days_since):
+                            if "Big" in g: ax.set_xticks(self.All.dates[::2])
+                            if not "Big" in g: ax.set_xticks(self.All.dates[::4])
+
+                if self.removeBox: self.removeBox.set_visible(False)
+                if self.infoBox: self.infoBox.set_visible(False)
+                self.firstAdd = False
+                self.infoWidget = None
+                self.infoBox = None
+                self.removeWidget = None
+                self.removeBox = None
+                self.inputWidget.set_val("")
+                if not loading: self.select(self.selectedC.name)
+            if loading: self.selectedC = None
+            self.draw()
 
 
     def remove(self,event):
+        if not self.selectedC: return
         self.All.hide(self.selectedC.name)
+        self.countries.remove(self.selectedC)
         for graph in self.graphs:
             line = self.graphLines[graph][self.selectedC.name][0]
             line.remove()
             del line
-            self.graphLabels[graph].remove(self.selectedC.name)
             ax = self.graphsAx[graph]
             ax.relim()
             ax.autoscale_view()
+            minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
+            minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
+            ax.set_xlim(left=minx)
+            ind = self.graphsLabels[graph].index(self.selectedC.name)
+            self.graphsHandles[graph].remove(self.graphsHandles[graph][ind])
+            self.graphsLabels[graph].remove(self.selectedC.name)
+
         self.select(None)
-        if self.removeBox: self.removeBox.set_visible(False)
-        if self.infoBox: self.infoBox.set_visible(False)
         self.infoWidget = None
         self.infoBox = None
         self.removeWidget = None
         self.removeBox = None
-        self.draw()
-
 
     def draw(self):
         for graph in self.graphs:
             legFontSize = SMALL_SIZE - 1 if "Big" not in graph else BIGGER_SIZE-0.5
-            self.graphsAx[graph].legend(fontsize = legFontSize,fancybox=True,loc="upper left", ncol=1)
+            self.graphsAx[graph].legend(self.graphsHandles[graph],self.graphsLabels[graph],fontsize = legFontSize,fancybox=True,loc="upper left", ncol=1)
+            if self.selectedC and self.dayBefore< -1:
+                if graph in self.graphDateLine and self.graphDateLine[graph]:
+                    self.graphDateLine[graph].remove()
+                    del self.graphDateLine[graph]
+                self.graphDateLine[graph] = self.graphsAx[graph].axvline(self.All.dates[self.dayBefore],ymin=0,ymax=10000,color="lightgray" )
+            elif graph in self.graphDateLine:
+                self.graphDateLine[graph].remove()
+                del self.graphDateLine[graph]
+
+        # print(self.startWidget)
+        if self.startWidget: self.startWidget.set_val("")
         plt.figure("Main")
         plt.draw()
         plt.figure("All Graphs")
@@ -163,9 +226,23 @@ class Graph():
     def change_start(self,text):
         try:
             if (text.isdigit() and int(text) != self.All.days_since):
-                self.load(self.All.region,int(text))
+                if int(text)==0 and "/" in str(self.All.days_since):
+                    for g in self.graphs:
+                        ax = self.graphsAx[g]
+                        ax.set_xlim(left=int(text))
+                        minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
+                        ax.set_xlim(left=minx)
+                    self.draw()
+
+                else:
+                    self.load(self.All.region,int(text))
             elif "/" in text and text in self.All.dates:
-                self.load(self.All.region,text)
+                for g in self.graphs:
+                    ax = self.graphsAx[g]
+                    self.All.days_since = text
+                    ax.set_xlim(left=self.All.dates.index(text))
+                self.draw()
+                # self.load(self.All.region,text)
         except ValueError:
             pass
 
@@ -181,14 +258,14 @@ class Graph():
         self.selectedC = c
         name = c.name.split(",")[0] if "," in c.name else c.name
 
-        txt ='{:18.18}  ({:3.2f} GF)'.format(name, self.averageGrowthFactor(c))
+        txt ='{:18.18}  ({:3.2f} GF) {date}'.format(name, self.averageGrowthFactor(c),date="[" + c.dates[self.dayBefore] + "]" if self.dayBefore < -1 else "")
         if c.pop < 0.1: txt +='\n{}  {:,.1f}K'.format("Population:", round(c.pop*1000,2))
         if c.pop >= 0.1: txt +='\n{}  {:,.1f}M'.format("Population:", round(c.pop,2)) #{:15s}
 
         if c.testing != "" and len(c.testing.split("|")[1]) < 33: txt +="\n"
 
-        txt +='\n{}   {:,.0f} {} ({:,.0f}/M)'.format("Cases:", c.cases[-1], " "*(20-len(str(c.casesPerM[-1]))),c.casesPerM[-1])
-        txt +='\n{} {:,.0f} {} ({:,.0f}/M)\n'.format("Deaths:", c.deaths[-1], " "*(25-len(str(c.deathsPerM[-1]))),c.deathsPerM[-1])
+        txt +='\n{}   {:,.0f} {} ({:,.0f}/M)'.format("Cases:", c.cases[self.dayBefore], " "*(20-len(str(c.casesPerM[self.dayBefore]))),c.casesPerM[self.dayBefore])
+        txt +='\n{} {:,.0f} {} ({:,.0f}/M)\n'.format("Deaths:", c.deaths[self.dayBefore], " "*(25-len(str(c.deathsPerM[self.dayBefore]))),c.deathsPerM[self.dayBefore])
 
         if c.testing != "":
             dt = c.testing.split("|")[0]
@@ -199,7 +276,7 @@ class Graph():
             txt += "------- No Testing Info ------\n"
 
         height = 0.15
-        startheight = min(0.74 - (len([c for c in self.All.countries if c.vis])/32),0.6)
+        startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.6)
 
         if self.infoWidget:
             self.infoWidget.set_val(txt)
@@ -217,38 +294,51 @@ class Graph():
         self.infoBox.add_patch(fancybox)
 
         if not self.removeWidget:
+            self.removeBox = None
             self.removeBox = plt.axes([0.23, startheight+height-0.055, 0.04, 0.055])
             self.removeWidget = Button(self.removeBox, 'Remove',color="whitesmoke" ,hovercolor="lightgray")
             self.removeWidget.label.set_fontsize(7)
             self.removeWidget.on_clicked(self.remove)
 
-
         self.removeBox.set_visible(True)
         self.infoBox.set_visible(True)
-        if not "Big" in self.clickedG: plt.figure("All Graphs")
+        if self.clickedG and not "Big" in self.clickedG: plt.figure("All Graphs")
 
     def press(self,event):
         if event.key == "escape": self.toggleConfirm(False)
         if not self.inInput and event.key.isdigit():
-            if int(event.key) <= len(self.graphLabels[self.clickedG]): self.select(self.graphLabels[self.clickedG][int(event.key)-1])
+            labels = self.graphsLabels[self.clickedG]
+            if int(event.key) <= len(labels):
+                self.select(labels[int(event.key)-1])
             return
         if self.selectedC:
             if event.key == "escape": self.onclick(event=None)
-            if event.key == "down" or event.key == "up":
-                dir = 1 if event.key == "down" else -1
-                curr_index = self.graphLabels[self.clickedG].index(self.selectedC.name)
-                new_index = (curr_index + dir) % len(self.graphLabels[self.clickedG])
-                self.select(self.graphLabels[self.clickedG][new_index])
+            if not self.inInput and event.key == "down" or event.key == "s" or event.key == "up" or event.key == "w" :
+                labels = self.graphsLabels[self.clickedG]
+                dir = 1 if event.key == "down" or event.key == "s" else -1
+                curr_index = labels.index(self.selectedC.name)
+                new_index = (curr_index + dir) % len(labels)
+                self.select(labels[new_index])
+            if not self.inInput and (event.key == "a" or event.key == "left" or event.key == "d" or event.key == "right"):
+
+                dir = -1 if  event.key == "a" or event.key == "left"  else 1
+                self.dayBefore = min(self.dayBefore + dir, -1)
+                self.select(self.selectedC.name)
 
     def select(self,selected):
         if not selected:
             self.selectedC = None
+            self.dayBefore = -1
             self.toggleConfirm(False)
-        if self.removeBox: self.removeBox.set_visible(False)
-        if self.infoBox: self.infoBox.set_visible(False)
+        if self.removeBox:
+            self.removeBox.set_visible(False)
+        if self.infoBox:
+            self.infoBox.set_visible(False)
+            self.infoWidget.set_val("")
 
         for graph in self.graphs:
-            for lname in self.graphLabels[graph]:
+            labels = self.graphsLabels[graph]
+            for lname in labels:
                 c =  self.All.get(lname)
                 if c:
                     line =self.graphLines[graph][lname][0]
@@ -257,6 +347,7 @@ class Graph():
                         if selected: self.selectedC = c
                     else:
                         line.set_color(c.lightcolor)
+
         if self.selectedC: self.country_info(self.selectedC)
         self.draw()
 
@@ -271,25 +362,26 @@ class Graph():
         except KeyError:
             for g in self.graphs:
                 if "Big" in g: self.clickedG = g
-        bottom, top = self.graphsYlim[self.clickedG]
+        bottom, top = self.graphsAx[self.clickedG].get_ylim()
         nameheight = top / 27  if "Big" in self.clickedG  else top/18     # Consol
         maxy =  top
         self.inInput = False
         self.showAll= False
+        labels = self.graphsLabels[self.clickedG]
         try:
-            if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 10 and  y < maxy and y > maxy - (nameheight*len(self.graphLabels[self.clickedG])):
-                if self.removeBox: self.removeBox.set_visible(False)
-                if self.infoBox: self.infoBox.set_visible(False)
-                count = len(self.graphLabels[self.clickedG])
+            if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 10 and  y < maxy and y > maxy - (nameheight*len(labels)):
+                count = len(labels)
                 index = math.floor((maxy-y)/nameheight)
                 i = 0
-                self.select(self.graphLabels[self.clickedG][index])
-            elif  x > 2:
+                self.select(labels[index])
+            elif x > 2:
+                self.dayBefore = -1
                 if self.selectedC:
                     self.showAll  = False
                 self.select(None)
-                if "Big" not in self.clickedG: self.graph()
-
+                if "Big" not in self.clickedG:
+                    self.big = self.clickedG
+                    self.graph()
             else:
                 self.inInput = True
         except TypeError:
@@ -319,27 +411,17 @@ class Graph():
             self.confirmText.set_visible(not self.confirmText.get_visible())
         plt.draw()
 
-    def graph(self, addC=False):
+    def graph(self):
+        plt.ion()
         self.prep()
-        self.graphs= ["casesPerM","newcasesPerM","deathsPerM","newdeathsPerM"]
-        self.showAll = False
-        if self.clickedG:
-            if self.showAll:
-                self.graphs = ["Big" + self.clickedG.replace("Big","")]+ self.graphs
-            else:
-                self.graphs.append("Big" + self.clickedG.replace("Big",""))
-        else:
-            self.graphs.append("BignewcasesPerM")
+        self.graphs =  ["casesPerM","newcasesPerM","deathsPerM","newdeathsPerM"] + ["Big" + self.big]
 
         if (self.All.days_since ==0 or "/" in str(self.All.days_since)): self.All.dates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in self.All.dates]
-
         sp = 1
-
         if self.fig: plt.close('all')
-
         self.infoWidget = None
         self.removeWidget = None
-
+        self.firstAdd  = True
         for g in self.graphs:
             if "Big" in g:
                 plt.rc('legend', fontsize=BIGGER_SIZE-0.5)
@@ -350,7 +432,6 @@ class Graph():
                 plt.rc('legend', fontsize=SMALL_SIZE-1)
                 self.fig = plt.figure("All Graphs",figsize=(15,7))
                 fig  = self.fig
-
             plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
             if "deaths" in g:
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='salmon')
@@ -361,60 +442,33 @@ class Graph():
                 sp +=1
             self.axGraphs[ax] = g
             self.graphsAx[g] = ax
-
-
+            self.graphLines[g] = {}
 
             g2 = g.replace("PerM"," (per 1M people)").replace("Big","")
             plt.title("" + g2.replace("new","New ").title(),color="0.25",fontsize=11,fontname="DejaVu Sans")
             if "Big" in g: plt.title("" + g2.replace("new","New ").title(),color="0.25",fontsize=14)
-
             word = caseWord[self.All.days_since] if self.All.days_since in caseWord else str(self.All.days_since)+ "th case"
             plt.xlabel("Days since " + word,color='dimgray')
-
             if self.All.days_since ==0 or "/" in str(self.All.days_since): plt.xlabel("Date")
-            # g = g.replace("Big","")
-            self.order(g.replace("Big",""))
-            self.graphLines[g] = {}
 
-            for c in self.All.countries:
-                if c.vis:
-                    gx = self.All.dates if self.All.days_since == 0 or "/" in str(self.All.days_since) else c.x
-                    gy =getattr(c,g.replace("Big",""))[0:len(gx)]
-                    if len(gy) < len(gx): gx = gx[0:len(gy)]
-                    ysmoothed = gaussian_filter1d(gy, sigma=1.1)
-                    if c.name== "World":
-                        if "PerM" in g: plt.plot(gx, ysmoothed[0:len(gx)],'k--',label= c.name)
-                    else:
-                        self.graphLines[g][c.name]= plt.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name)
-
-            plt.legend(fancybox=True,loc="upper left", ncol=1)
-            self.graphsYlim[g] = ax.get_ylim()
-
-
-            if self.All.days_since==0 or "/" in str(self.All.days_since):
-                if "Big" in g: plt.xticks(self.All.dates[::2])
-                if not "Big" in g: plt.xticks(self.All.dates[::4])
-
-            maxx = self.getMaxX(g)
-            minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
-            minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
-            plt.xlim(minx,maxx)
             plt.subplots_adjust(wspace=0.07, hspace=0.3, left=0.06,bottom=0.06,right=0.96, top=0.9)
 
-            handles ,self.graphLabels[g]  = ax.get_legend_handles_labels()
             fig.canvas.mpl_connect('key_press_event', self.press)
             fig.canvas.mpl_connect('button_press_event', self.onclick)
             if "Big" in g:
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
-                inputBox = plt.axes([0.24, 0.675, 0.1, 0.055])
-                self.inputWidget = TextBox(inputBox, '+', initial="", hovercolor="lightgray")
-                self.inputWidget.on_submit(self.submit)
+                # inputBox = plt.axes([0.24, 0.675, 0.1, 0.055])
+                inputBox = plt.axes([0.066, 0.9, 0.14, 0.055])
+                self.inputWidget = TextBox(inputBox, 'Add\nPlace:', initial="", hovercolor="lightgray")
+                self.inputWidget.on_submit(self.add)
+                self.inputWidget.label.set_size(8)
+                self.inputWidget.label.set_color("0.4")
 
                 startBox = plt.axes([0.85, 0.91, 0.03, 0.035])
-                startWidget = TextBox(startBox, 'Start from case/date: ', initial='', hovercolor="lightgray")
-                startWidget.label.set_color("0.5")
-                startWidget.label.set_size(8)
-                startWidget.on_submit(self.change_start)
+                self.startWidget = TextBox(startBox, 'Start from\ncase/date: ', initial='', hovercolor="lightgray")
+                self.startWidget.label.set_color("0.5")
+                self.startWidget.label.set_size(8)
+                self.startWidget.on_submit(self.change_start)
 
                 self.confirmBox = plt.axes([0.92, 0.8, 0.06, 0.035])
                 confirmWidget = Button(self.confirmBox , 'Confirm',color="whitesmoke" ,hovercolor="lightgray")
@@ -440,8 +494,11 @@ class Graph():
                 radio = RadioButtons(rax, ('My List', 'Europe', 'Asia', 'South America','States', 'Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
 
-        if self.selectedC: self.select(self.selectedC.name)
-        plt.figure("Main")
-        if self.clickedG and "Big" not in self.clickedG: plt.figure("All Graphs")
+        self.order("casesPerM")
+        count=0
+        for c in self.countries:
+            if count < self.limit: self.add(c.name, loading=True)
+            if count >= self.limit: self.countries.remove(c)
+            count += 1
         plt.ioff()
         plt.show()

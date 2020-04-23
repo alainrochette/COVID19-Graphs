@@ -26,6 +26,7 @@ country_colors ={"France":"cornflowerblue", "Ecuador":"cornflowerblue",
                 "China":"orangered", "Chile":"orangered", "Switzerland":"orangered","Rhode Island":"orangered",
                 "Peru":"peru", "Maryland":"peru",
                 "Venezuela":"crimson", "Hong Kong":"crimson",
+                "Canada":(32/255,120/255,187/255),
                 "World":"black"}
 light_colors={"cornflowerblue": (200/255,220/255,255/255),
                 "darkkhaki":"beige",
@@ -69,8 +70,9 @@ class Countries:
                  country.vis = 1
                  self.countries_list.append(country.name)
                  self.countries_list = list(set(self.countries_list))
-                 with open('myCache/My_List.txt', 'wb') as fp:
-                     pickle.dump(self.countries_list, fp)
+                 if self.region == "My List":
+                     with open('myCache/My_List.txt', 'wb') as fp:
+                         pickle.dump(self.countries_list, fp)
                  return country
         return self.addOther(c)
 
@@ -87,7 +89,6 @@ class Countries:
                  self.countries_list = list(set(self.countries_list))
                  self.countries_list.remove(country.name)
                  if self.region == "My List":
-
                      with open('myCache/My_List.txt',  'wb') as fp:
                          pickle.dump(self.countries_list, fp)
                  return True
@@ -114,18 +115,21 @@ class Countries:
                 c = None
                 for row in csv_reader:
                     if line_count == 0:
-                        self.dates = [d for d in row[4:] if d != ""]
+                        cdates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in row[4:] if d != ""]
+
+                        if not self.dates: self.dates = cdates
                     elif row[1].lower().replace("*","")==name.lower() or row[0].lower().replace("*","")==name.lower()or name=="World":
                         if row[1].lower().replace("*","")==name.lower(): name = row[1].replace("*","")
                         if row[0].lower().replace("*","")==name.lower(): name = row[0].replace("*","")
                         found = True
                         if c:
-                            c.allcases =  [x + y for x, y in zip(c.allcases, [int(float(x)) for x in row[4:][0:len(self.dates)] if x != ""])]
+                            c.allcases =  [x + y for x, y in zip(c.allcases, [int(float(x)) for x in row[4:][0:len(c.dates)] if x != ""])]
                         else:
                             newcolor =[random.random(),random.random(),random.random()]
                             if name in self.country_colors: newcolor = self.country_colors[name]
                             c = Country(self,name,pop,newcolor) if not c else self.get(name)
-                            c.allcases = [int(float(x)) for x in row[4:][0:len(self.dates)] if x != ""]
+                            c.dates = cdates
+                            c.allcases = [int(float(x)) for x in row[4:][0:len(c.dates)] if x != ""]
                     line_count += 1
 
                 if found:
@@ -141,12 +145,12 @@ class Countries:
                 deathCount = 0
                 for row in csv_reader:
                     if line_count == 0:
-                        self.dates = [d for d in row[4:] if d != ""]
+                        pass
                     elif row[1].lower().replace("*","")==name.lower() or row[0].lower().replace("*","")==name.lower() or name=="World":
                         if deathCount > 0:
-                            c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(float(x)) for x in row[4:][0:len(self.dates)] if x != ""])]
+                            c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(float(x)) for x in row[4:][0:len(c.dates)] if x != ""])]
                         else:
-                            c.alldeaths = [int(float(x)) for x in row[4:][0:len(self.dates)] if x != ""]
+                            c.alldeaths = [int(float(x)) for x in row[4:][0:len(c.dates)] if x != ""]
                         deathCount += 1
                     line_count += 1
 
@@ -177,20 +181,21 @@ class Countries:
                 c = None
                 for row in csv_reader:
                     if line_count == 0:
-                        self.dates = [d for d in row[11:] if d != ""]
+                        cdates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in row[11:] if d != ""]
                     elif (place.lower().replace(" ","")  ==  row[10].replace(", US","").lower().replace(" ","") or
                         place.lower()  ==  row[6].lower()):
                         found = True
                         if place.lower().replace(" ","")  ==  row[10].replace(", US","").lower().replace(" ",""): place = row[10].replace(", US","")
                         if place.lower()  ==  row[6].lower(): place = row[6]
                         if c:
-                            c.allcases =  [x + y for x, y in zip(c.allcases, [int(float(x)) for x in row[11:][0:len(self.dates)] if x != ""])]
+                            c.allcases =  [x + y for x, y in zip(c.allcases, [int(float(x)) for x in row[11:][0:len(c.dates)] if x != ""])]
                         else:
                             newcolor =[random.random(),random.random(),random.random()]
                             if place +ast in self.country_colors: newcolor = self.country_colors[place+ast]
                             c = self.get(place+ast)
                             if not c: c = Country(self,place +ast,pop,newcolor)
-                            c.allcases = [int(float(x)) for x in row[11:][0:len(self.dates)] if x != ""]
+                            c.dates = cdates
+                            c.allcases = [int(float(x)) for x in row[11:][0:len(c.dates)] if x != ""]
                     line_count += 1
 
                 if found:
@@ -207,14 +212,14 @@ class Countries:
                 totalpop = 0
                 for row in csv_reader:
                     if line_count == 0:
-                        self.dates = [d for d in row[12:] if d != ""]
+                        pass
                     elif (place.lower().replace(" ","")  ==  row[10].replace(", US","").lower().replace(" ","") or
                         place.lower()  ==  row[6].lower()):
                         totalpop = totalpop + int(float(row[11]))
                         if deathCount > 0:
-                            c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(float(x)) for x in row[12:][0:len(self.dates)] if x != ""])]
+                            c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(float(x)) for x in row[12:][0:len(c.dates)] if x != ""])]
                         else:
-                            c.alldeaths = [int(float(x)) for x in row[12:][0:len(self.dates)] if x != ""]
+                            c.alldeaths = [int(float(x)) for x in row[12:][0:len(c.dates)] if x != ""]
                         deathCount += 1
                     line_count += 1
 
@@ -244,7 +249,7 @@ class Countries:
                 if c.allcases[cc]  > days_since - 1 and c.day==0:
                     c.day = cc
                     break
-            c.days = len(self.dates)-c.day
+            c.days = len(c.dates)-c.day
             c.x =[i for i in range(0,c.days)]
         all = getattr(c,"all"+type)
         norm = getattr(c,type)
@@ -311,7 +316,9 @@ class Country:
         self.vis = 0
         self.color= color
         self.defcolor= color
-        self.lightcolor = light_colors[color] if isinstance(color, str) else [min(1,x+0.5) for x in color]
+
+        self.lightcolor = light_colors[color] if isinstance(color, str) else [x + (1 - x) * 0.8 for x in color]
+        self.dates = []
         self.newcases = []
         self.newcasesPerM = []
         self.cases  = []
