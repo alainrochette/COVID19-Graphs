@@ -46,7 +46,7 @@ class Graph():
         self.confirmText= None
         self.inInput = False
         self.graphs = None
-        self.places = []
+        self.countries = []
         self.graphLines ={}
         self.axGraphs ={}
         self.graphsAx ={}
@@ -95,9 +95,9 @@ class Graph():
 
     def order(self,type):
         d ={}
-        for c in self.places:
+        for c in self.countries:
             d[c.name]=getattr(c,type)[-1]
-        self.places = {self.All.get(k): getattr(self.All.get(k),type) for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}.keys()
+        self.countries = list({self.All.get(k): getattr(self.All.get(k),type) for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}.keys())
 
     def labelOrder(self,handles,labels,type):
         d ={}
@@ -170,9 +170,9 @@ class Graph():
                 if self.infoBox: self.infoBox.set_visible(False)
                 self.firstAdd = False
                 self.infoWidget = None
-                self.infoBox = None
+                # self.infoBox = None
                 self.removeWidget = None
-                self.removeBox = None
+                # self.removeBox = None
                 self.inputWidget.set_val("")
                 if not loading: self.select(self.selectedC.name)
             if loading: self.selectedC = None
@@ -199,9 +199,9 @@ class Graph():
 
         self.select(None)
         self.infoWidget = None
-        self.infoBox = None
+        # self.infoBox = None
         self.removeWidget = None
-        self.removeBox = None
+        # self.removeBox = None
 
     def draw(self):
         for graph in self.graphs:
@@ -279,8 +279,10 @@ class Graph():
         startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.6)
 
         if self.infoWidget:
+            self.infoWidget.set_val("")
             self.infoWidget.set_val(txt)
         else:
+            if self.infoBox: self.infoBox.remove()
             self.infoBox = plt.axes([0.065, startheight, 0.16, height])
             self.infoBox.set_frame_on(False)
             self.infoWidget = TextBox(self.infoBox, '', txt)
@@ -294,7 +296,9 @@ class Graph():
         self.infoBox.add_patch(fancybox)
 
         if not self.removeWidget:
-            self.removeBox = None
+            if self.removeBox: self.removeBox.remove()
+            # self.removeBox = plt.axes([0, 1, 0, 1])
+            # self.removeBox = None
             self.removeBox = plt.axes([0.23, startheight+height-0.055, 0.04, 0.055])
             self.removeWidget = Button(self.removeBox, 'Remove',color="whitesmoke" ,hovercolor="lightgray")
             self.removeWidget.label.set_fontsize(7)
@@ -313,7 +317,7 @@ class Graph():
             return
         if self.selectedC:
             if event.key == "escape": self.onclick(event=None)
-            if not self.inInput and event.key == "down" or event.key == "s" or event.key == "up" or event.key == "w" :
+            if not self.inInput and (event.key == "down" or event.key == "s" or event.key == "up" or event.key == "w") :
                 labels = self.graphsLabels[self.clickedG]
                 dir = 1 if event.key == "down" or event.key == "s" else -1
                 curr_index = labels.index(self.selectedC.name)
@@ -332,7 +336,7 @@ class Graph():
             self.toggleConfirm(False)
         if self.removeBox:
             self.removeBox.set_visible(False)
-        if self.infoBox:
+        if self.infoBox and self.infoWidget:
             self.infoBox.set_visible(False)
             self.infoWidget.set_val("")
 
@@ -368,24 +372,25 @@ class Graph():
         self.inInput = False
         self.showAll= False
         labels = self.graphsLabels[self.clickedG]
-        try:
-            if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 10 and  y < maxy and y > maxy - (nameheight*len(labels)):
-                count = len(labels)
-                index = math.floor((maxy-y)/nameheight)
-                i = 0
-                self.select(labels[index])
-            elif x > 2:
-                self.dayBefore = -1
-                if self.selectedC:
-                    self.showAll  = False
-                self.select(None)
-                if "Big" not in self.clickedG:
-                    self.big = self.clickedG
-                    self.graph()
-            else:
-                self.inInput = True
-        except TypeError:
-            pass
+        # print(x)
+        # try:
+        if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 10 and  y < maxy and y > maxy - (nameheight*len(labels)):
+            count = len(labels)
+            index = math.floor((maxy-y)/nameheight)
+            i = 0
+            self.select(labels[index])
+        elif x > 2:
+            self.dayBefore = -1
+            if self.selectedC:
+                self.showAll  = False
+            self.select(None)
+            if "Big" not in self.clickedG:
+                self.big = self.clickedG
+                self.graph()
+        else:
+            self.inInput = True
+        # except TypeError:
+        #     pass
 
     def refreshData(self, event):
         os.system("clear")
