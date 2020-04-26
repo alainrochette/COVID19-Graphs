@@ -416,6 +416,7 @@ class Graph():
             self.refreshBox.set_visible(not self.refreshBox.get_visible())
             self.confirmText.set_visible(not self.confirmText.get_visible())
             self.helpBox.set_visible(not self.helpBox.get_visible())
+            if self.helpText.get_visible(): self.helpText.set_visible(False)
         plt.draw()
 
     def toggleHelp(self,event):
@@ -474,7 +475,9 @@ class Graph():
                 self.inputWidget.label.set_size(9)
                 self.inputWidget.label.set_color("0.4")
 
+
                 self.startBox = plt.axes([0.85, 0.91, 0.03, 0.035])
+
                 self.startWidget = TextBox(self.startBox, 'Start from\ncase/date: ', initial='', hovercolor="lightgray")
                 self.startWidget.label.set_color("0.5")
                 self.startWidget.label.set_size(8)
@@ -502,15 +505,15 @@ class Graph():
                 helpWidget.on_clicked(self.toggleHelp)
                 self.helpBox.set_visible(False)
 
-                self.helpText= ax.text(0.938, 0.73, ("\n".join(["•Type any Place \n  (Country, US City, US State) \n",
+                self.helpText= ax.text(0.938, 0.73, ("\n".join(["•Type any Place: (Country,\n  US City, US State) \n",
 
                                                     "     Examples:\n          -Lithuania\n          -Houston, Texas\n          -California\n",
 
-                                                    "•Choose starting date/days \n  since Xth case\n",
+                                                    "•Choose starting date/\n  days since Xth case\n",
 
                                                     "•Click Place in Legend for\n  More Info / to Remove.\n",
 
-                                                    "•With place selected, use\n  arrow keys to navigate\n",])), transform=ax.transAxes, fontsize=5.5,
+                                                    "•With place selected, use\n  arrow keys to navigate\n",])), transform=ax.transAxes, fontsize=6,
                                                         verticalalignment='top', color ="darkgray",bbox=props)
                 self.helpText.set_visible(False)
 
@@ -521,7 +524,7 @@ class Graph():
 
 
                 active_region ={"My List":0, "States":1,"Europe":2,"Asia":3, "Africa":4,"South America":5, "Americas":6 ,"Other":7}
-                rax = plt.axes([0.23, 0.68, 0.12, 0.22], facecolor='white')
+                rax = plt.axes([0.222, 0.68, 0.12, 0.22], facecolor='white')
                 radio = RadioButtons(rax, ('My List', 'States', 'Europe', 'Asia', 'Africa','South America', 'Americas','Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
 
