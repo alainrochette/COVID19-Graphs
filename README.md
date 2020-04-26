@@ -17,6 +17,7 @@ ___
     - *e.g.: "Lithuania", "Los Angeles, California", "Texas"*
   * Click Place in legend for More Info / to Remove.
   * Choose starting date/days since Xth case
+  * Check for Updates in Settings > Update Data
  
 
 * Optional:
