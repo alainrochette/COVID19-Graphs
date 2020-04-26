@@ -41,9 +41,9 @@ class Graph():
         self.startBox = None
         self.startWidget = None
         self.LUtext = None
-        self.refreshBox = None
+        self.settingsBox = None
         self.updateBox = None
-        self.confirmBox = None
+        self.refreshBox = None
         self.confirmText= None
         self.inInput = False
         self.graphs = None
@@ -308,7 +308,7 @@ class Graph():
         if self.clickedG and not "Big" in self.clickedG: plt.figure("All Graphs")
 
     def press(self,event):
-        if event.key == "escape": self.toggleConfirm(False)
+        if event.key == "escape": self.toggleSettings(False)
         if not self.inInput and event.key.isdigit():
             labels = self.graphsLabels[self.clickedG]
             if int(event.key) <= len(labels):
@@ -332,7 +332,7 @@ class Graph():
         if not selected:
             self.selectedC = None
             self.dayBefore = -1
-            self.toggleConfirm(False)
+            self.toggleSettings(False)
         if self.removeBox:
             self.removeBox.set_visible(False)
         if self.infoBox and self.infoWidget:
@@ -406,14 +406,20 @@ class Graph():
         self.lastUpdated = lastUpdated
         self.load("My List")
 
-    def toggleConfirm(self, event):
+    def toggleSettings(self, event):
         if not event:
-            self.confirmBox.set_visible(False)
+            self.refreshBox.set_visible(False)
             self.confirmText.set_visible(False)
+            self.helpBox.set_visible(False)
+            self.helpText.set_visible(False)
         else:
-            self.confirmBox.set_visible(not self.confirmBox.get_visible())
+            self.refreshBox.set_visible(not self.refreshBox.get_visible())
             self.confirmText.set_visible(not self.confirmText.get_visible())
+            self.helpBox.set_visible(not self.helpBox.get_visible())
         plt.draw()
+
+    def toggleHelp(self,event):
+        self.helpText.set_visible(not self.helpText.get_visible())
 
     def graph(self):
         plt.ion()
@@ -465,7 +471,7 @@ class Graph():
                 inputBox = plt.axes([0.066, 0.9, 0.14, 0.055])
                 self.inputWidget = TextBox(inputBox, 'Add\nPlace:', initial="", hovercolor="lightgray")
                 self.inputWidget.on_submit(self.add)
-                self.inputWidget.label.set_size(8)
+                self.inputWidget.label.set_size(9)
                 self.inputWidget.label.set_color("0.4")
 
                 self.startBox = plt.axes([0.85, 0.91, 0.03, 0.035])
@@ -474,28 +480,49 @@ class Graph():
                 self.startWidget.label.set_size(8)
                 self.startWidget.on_submit(self.change_start)
 
-                self.confirmBox = plt.axes([0.92, 0.8, 0.06, 0.035])
-                confirmWidget = Button(self.confirmBox , 'Confirm',color="whitesmoke" ,hovercolor="lightgray")
-                confirmWidget.label.set_fontsize(7)
-                confirmWidget.on_clicked(self.refreshData)
-                self.confirmBox.set_visible(False)
+                self.settingsBox = plt.axes([0.92, 0.91, 0.06, 0.035])
+                settingsWidgets = Button(self.settingsBox, 'Settings',color="whitesmoke" ,hovercolor="lightgray")
+                settingsWidgets.label.set_fontsize(7)
+                settingsWidgets.on_clicked(self.toggleSettings)
 
+                self.refreshBox = plt.axes([0.92, 0.8, 0.06, 0.035])
+                refreshWidget = Button(self.refreshBox , 'Refresh Data',color="whitesmoke" ,hovercolor="lightgray")
+                refreshWidget.label.set_fontsize(7)
+                refreshWidget.on_clicked(self.refreshData)
+                self.refreshBox.set_visible(False)
+
+                props = dict( facecolor='white', edgecolor='white')
                 self.confirmText= ax.text(0.958, 0.87, "Refresh takes\n up to 20 secs.", transform=ax.transAxes, fontsize=7,
-                        verticalalignment='top', color ="darkgray")
+                        verticalalignment='top', color ="darkgray", bbox=props)
                 self.confirmText.set_visible(False)
 
-                self.refreshBox = plt.axes([0.92, 0.91, 0.06, 0.035])
-                refreshWidget = Button(self.refreshBox, 'Refresh Data',color="whitesmoke" ,hovercolor="lightgray")
-                refreshWidget.label.set_fontsize(7)
-                refreshWidget.on_clicked(self.toggleConfirm)
+                self.helpBox = plt.axes([0.92, 0.69, 0.06, 0.035])
+                helpWidget = Button(self.helpBox , 'Help',color="whitesmoke" ,hovercolor="lightgray")
+                helpWidget.label.set_fontsize(7)
+                helpWidget.on_clicked(self.toggleHelp)
+                self.helpBox.set_visible(False)
+
+                self.helpText= ax.text(0.938, 0.73, ("\n".join(["•Type any Place \n  (Country, US City, US State) \n",
+
+                                                    "     Examples:\n          -Lithuania\n          -Houston, Texas\n          -California\n",
+
+                                                    "•Choose starting date/days \n  since Xth case\n",
+
+                                                    "•Click Place in Legend for\n  More Info / to Remove.\n",
+
+                                                    "•With place selected, use\n  arrow keys to navigate\n",])), transform=ax.transAxes, fontsize=5.5,
+                                                        verticalalignment='top', color ="darkgray",bbox=props)
+                self.helpText.set_visible(False)
+
+
 
                 self.LUtext= ax.text(0.958, 1, "Last Updated:\n "+self.lastUpdated.strftime("%m/%d %H:%M"), transform=ax.transAxes, fontsize=7,
                         verticalalignment='top', color ="darkgray")
 
 
-                active_region ={"My List":0, "Europe":1,"Asia":2, "South America":3,"States":4,"Other":5}
-                rax = plt.axes([0.23, 0.729, 0.1, 0.18], facecolor='white')
-                radio = RadioButtons(rax, ('My List', 'Europe', 'Asia', 'South America','States', 'Other'),active=active_region[self.All.region],activecolor='lightgray')
+                active_region ={"My List":0, "States":1,"Europe":2,"Asia":3, "Africa":4,"South America":5, "Americas":6 ,"Other":7}
+                rax = plt.axes([0.23, 0.68, 0.12, 0.22], facecolor='white')
+                radio = RadioButtons(rax, ('My List', 'States', 'Europe', 'Asia', 'Africa','South America', 'Americas','Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
 
         self.order("casesPerM")
