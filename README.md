@@ -37,7 +37,7 @@ ___
 
 
 ## Data Sources:
-Johns Hopkins CSSE [(GitHub)](https://github.com/CSSEGISandData/COVID-19.git)
+**Johns Hopkins CSSE** [(GitHub)](https://github.com/CSSEGISandData/COVID-19.git)
 - World Health Organization (WHO): https://www.who.int/ 
 - DXY.cn. Pneumonia. 2020. http://3g.dxy.cn/newh5/view/pneumonia. 
 - BNO News: https://bnonews.com/index.php/2020/02/the-latest-coronavirus-cases/ 
@@ -57,6 +57,6 @@ Johns Hopkins CSSE [(GitHub)](https://github.com/CSSEGISandData/COVID-19.git)
 - COVID Tracking Project: https://covidtracking.com/data. (US Testing and Hospitalization Data. We use the maximum reported value from "Currently" and "Cumulative" Hospitalized for our hospitalization number report ed for each state.)
 
 
-Our World In Data [(GitHub)](https://github.com/owid/covid-19-data.git)
+**Our World In Data** [(GitHub)](https://github.com/owid/covid-19-data.git)
 - European CDC: https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide
 
