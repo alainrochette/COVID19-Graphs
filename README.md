@@ -4,7 +4,7 @@
 
 *Source data updated every day at 8PM ET*
 
-**Python required.** (https://www.python.org/downloads/)
+Python required. (https://www.python.org/downloads/)
 ___
 ### Instructions:
 
