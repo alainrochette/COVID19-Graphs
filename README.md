@@ -11,7 +11,7 @@ Python required. (https://www.python.org/downloads/)
   * `--install` : Install scipy, matplotlib, and git (if OSX)
  
 * Graphs:
-  * Use + to add any Place (Country, US City, US State)
+  * Add any Place (Country, US City, US State)
   
     - *e.g.: "Lithuania", "Los Angeles, California", "Texas"*
   * Click Place in legend for More Info / to Remove.
