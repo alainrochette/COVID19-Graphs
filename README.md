@@ -1,9 +1,8 @@
 # COVID19-Graphs
 Graph multiple countries' COVID-19 timeline in one window. 
-
-Python required. (https://www.python.org/downloads/)
-
 *Source data updated every day at 8PM ET*
+
+**Python required.** (https://www.python.org/downloads/)
 
 ### Instructions:
 
