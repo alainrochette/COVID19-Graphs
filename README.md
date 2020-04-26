@@ -3,12 +3,8 @@
 <p align="center">
 Graph multiple countries' COVID-19 timeline in one window. 
 </p>
-<p align="center">
 *Source data updated every day at 8PM ET*
- </p>
-<p align="center">
 **Python required.** (https://www.python.org/downloads/)
-</p>
 ___
 ### Instructions:
 
