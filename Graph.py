@@ -134,8 +134,8 @@ class Graph():
         if mynewcountries != mycountries:
             with open('myCache/My_List.txt', 'wb') as fp:
                 pickle.dump(mynewcountries, fp)
-            self.change_regions("My List")
-            self.select(selected.name)
+            self.selectedC = selected
+            self.change_regions("My List",selected)
         # prev_region = self.All.region
         # selected = self.selectedC
         # self.change_regions("My List")
@@ -193,10 +193,8 @@ class Graph():
                 if self.infoBox: self.infoBox.set_visible(False)
                 self.firstAdd = False
                 self.infoWidget = None
-                # self.infoBox = None
                 self.removeWidget = None
                 self.addToListWidget = None
-                # self.removeBox = None
                 self.inputWidget.set_val("")
                 if not loading: self.select(self.selectedC.name)
             if loading: self.selectedC = None
@@ -223,10 +221,8 @@ class Graph():
 
         self.select(None)
         self.infoWidget = None
-        # self.infoBox = None
         self.removeWidget = None
         self.addToListWidget = None
-        # self.removeBox = None
 
     def draw(self):
         for graph in self.graphs:
@@ -271,8 +267,8 @@ class Graph():
         except ValueError:
             pass
 
-    def change_regions(self,region):
-        self.selectedC  = None
+    def change_regions(self,region,selected=False):
+        if not selected: self.selectedC  = None
         plt.figure("Main")
         plt.close('all')
         self.load(region)
@@ -369,7 +365,6 @@ class Graph():
             self.infoBox.set_visible(False)
             self.infoWidget.set_val("")
 
-
         for graph in self.graphs:
             labels = self.graphsLabels[graph]
             for lname in labels:
@@ -402,7 +397,7 @@ class Graph():
         self.inInput = False
         self.showAll= False
         labels = self.graphsLabels[self.clickedG]
-        # print(x)
+
         try:
             if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 10 and  y < maxy and y > maxy - (nameheight*len(labels)):
                 count = len(labels)
@@ -562,9 +557,11 @@ class Graph():
 
         self.order("casesPerM")
         count=0
+        selected = self.selectedC
         for c in self.countries:
             if count < self.limit: self.add(c.name, loading=True)
             if count >= self.limit: self.countries.remove(c)
             count += 1
+        if selected: self.select(selected.name)
         plt.ioff()
         plt.show()
