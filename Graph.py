@@ -38,6 +38,8 @@ class Graph():
         self.inputWidget = None
         self.removeWidget = None
         self.removeBox = None
+        self.addToListBox = None
+        self.addToListWidget = None
         self.startBox = None
         self.startWidget = None
         self.LUtext = None
@@ -124,6 +126,25 @@ class Graph():
             c.newdeathsPerM = [x/c.pop for x in c.newdeaths]
             c.GF = self.growthFactor(c)
 
+    def addToList(self,event):
+        selected = self.selectedC
+        with open('myCache/My_List.txt',  'rb') as fp:
+            mycountries = list(set(pickle.load(fp)))
+        mynewcountries = list(set(mycountries +  [self.selectedC.name]))
+        if mynewcountries != mycountries:
+            with open('myCache/My_List.txt', 'wb') as fp:
+                pickle.dump(mynewcountries, fp)
+            self.change_regions("My List")
+            self.select(selected.name)
+        # prev_region = self.All.region
+        # selected = self.selectedC
+        # self.change_regions("My List")
+        # print("ADDING",selected.name)
+        # self.selectedC = selected
+        # self.add(self.selectedC.name)
+        # print("ADDED",selected.name)
+        # self.draw()
+
     def add(self,text, loading=False):
         if not loading: self.limit = 120
         if text != "":
@@ -168,11 +189,13 @@ class Graph():
                             if not "Big" in g: ax.set_xticks(self.All.dates[::4])
 
                 if self.removeBox: self.removeBox.set_visible(False)
+                if self.addToListBox: self.addToListBox.set_visible(False)
                 if self.infoBox: self.infoBox.set_visible(False)
                 self.firstAdd = False
                 self.infoWidget = None
                 # self.infoBox = None
                 self.removeWidget = None
+                self.addToListWidget = None
                 # self.removeBox = None
                 self.inputWidget.set_val("")
                 if not loading: self.select(self.selectedC.name)
@@ -202,13 +225,14 @@ class Graph():
         self.infoWidget = None
         # self.infoBox = None
         self.removeWidget = None
+        self.addToListWidget = None
         # self.removeBox = None
 
     def draw(self):
         for graph in self.graphs:
             legFontSize = SMALL_SIZE - 1 if "Big" not in graph else BIGGER_SIZE-0.5
             self.graphsAx[graph].legend(self.graphsHandles[graph],self.graphsLabels[graph],fontsize = legFontSize,fancybox=True,loc="upper left", ncol=1)
-            if self.selectedC and self.dayBefore< -1:
+            if self.selectedC and self.dayBefore < -1:
                 if graph in self.graphDateLine and self.graphDateLine[graph]:
                     self.graphDateLine[graph].remove()
                     del self.graphDateLine[graph]
@@ -277,7 +301,7 @@ class Graph():
             txt += "------- No Testing Info ------\n"
 
         height = 0.15
-        startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.6)
+        startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.5)
 
         if self.infoWidget:
             self.infoWidget.set_val("")
@@ -302,7 +326,13 @@ class Graph():
             self.removeWidget = Button(self.removeBox, 'Remove',color="whitesmoke" ,hovercolor="lightgray")
             self.removeWidget.label.set_fontsize(7)
             self.removeWidget.on_clicked(self.remove)
-
+            if self.All.region != "My List":
+                if self.addToListBox: self.addToListBox.remove()
+                self.addToListBox = plt.axes([0.23, startheight+height-0.12, 0.04, 0.055])
+                self.addToListWidget = Button(self.addToListBox, 'Add To\nMy List',color="whitesmoke" ,hovercolor="lightgray")
+                self.addToListWidget.label.set_fontsize(6.5)
+                self.addToListWidget.on_clicked(self.addToList)
+        if self.addToListBox: self.addToListBox.set_visible(True)
         self.removeBox.set_visible(True)
         self.infoBox.set_visible(True)
         if self.clickedG and not "Big" in self.clickedG: plt.figure("All Graphs")
@@ -333,11 +363,12 @@ class Graph():
             self.selectedC = None
             self.dayBefore = -1
             self.toggleSettings(False)
-        if self.removeBox:
-            self.removeBox.set_visible(False)
+        if self.removeBox: self.removeBox.set_visible(False)
+        if self.addToListBox: self.addToListBox.set_visible(False)
         if self.infoBox and self.infoWidget:
             self.infoBox.set_visible(False)
             self.infoWidget.set_val("")
+
 
         for graph in self.graphs:
             labels = self.graphsLabels[graph]
@@ -432,6 +463,7 @@ class Graph():
         if self.fig: plt.close('all')
         self.infoWidget = None
         self.removeWidget = None
+        self.addToListWidget = None
         self.firstAdd  = True
         for g in self.graphs:
             if "Big" in g:
@@ -478,9 +510,9 @@ class Graph():
 
                 self.startBox = plt.axes([0.85, 0.91, 0.03, 0.035])
 
-                self.startWidget = TextBox(self.startBox, 'Start from\ncase/date: ', initial='', hovercolor="lightgray")
-                self.startWidget.label.set_color("0.5")
-                self.startWidget.label.set_size(8)
+                self.startWidget = TextBox(self.startBox, 'Start from  \ncase/date: ', initial='', hovercolor="lightgray")
+                self.startWidget.label.set_color("0.6")
+                self.startWidget.label.set_size(7)
                 self.startWidget.on_submit(self.change_start)
 
                 self.settingsBox = plt.axes([0.92, 0.91, 0.06, 0.035])
