@@ -38,6 +38,7 @@ class Graph():
         self.inputWidget = None
         self.removeWidget = None
         self.removeBox = None
+        self.startBox = None
         self.startWidget = None
         self.LUtext = None
         self.refreshBox = None
@@ -54,7 +55,7 @@ class Graph():
         self.graphsHandles={}
         self.graphsNameheight={}
         self.lastUpdated = lastUpdated
-        self.dayBefore = - 1
+        self.dayBefore = -1
         self.graphDateLine = {}
         self.setParams()
 
@@ -88,7 +89,7 @@ class Graph():
         return gf
 
     def averageGrowthFactor(self,c):
-        return sum(c.GF[-6:])/6
+        return sum(c.GF[-6 + self.dayBefore + 1:len(c.GF) + self.dayBefore + 1])/6
 
     def showL(self,c,data):
     	return [i*c.vis for i in data]
@@ -258,7 +259,7 @@ class Graph():
         self.selectedC = c
         name = c.name.split(",")[0] if "," in c.name else c.name
 
-        txt ='{:18.18}  ({:3.2f} GF) {date}'.format(name, self.averageGrowthFactor(c),date="[" + c.dates[self.dayBefore] + "]" if self.dayBefore < -1 else "")
+        txt ='{:16.16}  ({:3.2f} GF) {date}'.format(name, self.averageGrowthFactor(c),date="[" + c.dates[self.dayBefore] + "]" if self.dayBefore < -1 else "")
         if c.pop < 0.1: txt +='\n{}  {:,.1f}K'.format("Population:", round(c.pop*1000,2))
         if c.pop >= 0.1: txt +='\n{}  {:,.1f}M'.format("Population:", round(c.pop,2)) #{:15s}
 
@@ -297,8 +298,6 @@ class Graph():
 
         if not self.removeWidget:
             if self.removeBox: self.removeBox.remove()
-            # self.removeBox = plt.axes([0, 1, 0, 1])
-            # self.removeBox = None
             self.removeBox = plt.axes([0.23, startheight+height-0.055, 0.04, 0.055])
             self.removeWidget = Button(self.removeBox, 'Remove',color="whitesmoke" ,hovercolor="lightgray")
             self.removeWidget.label.set_fontsize(7)
@@ -373,24 +372,24 @@ class Graph():
         self.showAll= False
         labels = self.graphsLabels[self.clickedG]
         # print(x)
-        # try:
-        if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 10 and  y < maxy and y > maxy - (nameheight*len(labels)):
-            count = len(labels)
-            index = math.floor((maxy-y)/nameheight)
-            i = 0
-            self.select(labels[index])
-        elif x > 2:
-            self.dayBefore = -1
-            if self.selectedC:
-                self.showAll  = False
-            self.select(None)
-            if "Big" not in self.clickedG:
-                self.big = self.clickedG
-                self.graph()
-        else:
-            self.inInput = True
-        # except TypeError:
-        #     pass
+        try:
+            if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 10 and  y < maxy and y > maxy - (nameheight*len(labels)):
+                count = len(labels)
+                index = math.floor((maxy-y)/nameheight)
+                i = 0
+                self.select(labels[index])
+            elif x > 2:
+                self.dayBefore = -1
+                if self.selectedC:
+                    self.showAll  = False
+                self.select(None)
+                if "Big" not in self.clickedG:
+                    self.big = self.clickedG
+                    self.graph()
+            else:
+                self.inInput = True
+        except TypeError:
+            pass
 
     def refreshData(self, event):
         os.system("clear")
@@ -469,8 +468,8 @@ class Graph():
                 self.inputWidget.label.set_size(8)
                 self.inputWidget.label.set_color("0.4")
 
-                startBox = plt.axes([0.85, 0.91, 0.03, 0.035])
-                self.startWidget = TextBox(startBox, 'Start from\ncase/date: ', initial='', hovercolor="lightgray")
+                self.startBox = plt.axes([0.85, 0.91, 0.03, 0.035])
+                self.startWidget = TextBox(self.startBox, 'Start from\ncase/date: ', initial='', hovercolor="lightgray")
                 self.startWidget.label.set_color("0.5")
                 self.startWidget.label.set_size(8)
                 self.startWidget.on_submit(self.change_start)

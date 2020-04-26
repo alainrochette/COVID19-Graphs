@@ -12,6 +12,7 @@ if "--install" in sys.argv:
     if sys.platform == "darwin":
         print("\n---- Installing XCode Command Line Tools ----\n")
         os.system("xcode-select --install")
+
 try:
     with open('myCache/lastUpdated.txt',  'rb') as fp:
         lastUpdated = pickle.load(fp)
