@@ -12,12 +12,12 @@ ___
   * `--install` : Install scipy, matplotlib, and git (if OSX)
  
 * Graphs:
-  * **Add** any Place (Country, US City, US State)
+  * **Add Any Place:** (Country, US City, US State)
   
     - *e.g.: "Lithuania", "Los Angeles, California", "Texas"*
-  * Click Place in legend for **More Info** / to **Remove**.
-  * Choose starting date/days since Xth case_
-  * Check for Updates in **Settings > Update Data**
+  * **Country Info:** Click Place in legend for more info to remove from list.
+  * **Start Date:** Choose starting date/days since Xth case
+  * **Update Data:** Check for Updates in Settings > Update Data
  
 
 * Optional:
