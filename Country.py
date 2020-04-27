@@ -156,6 +156,20 @@ class Countries:
 
                 self.clean(c,"deaths")
                 c.vis = 1
+            with open('csse_covid_19_time_series/time_series_covid19_recovered_global.csv') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                line_count = 0
+                recoveredCount = 0
+                for row in csv_reader:
+                    if line_count == 0:
+                        pass
+                    elif row[1].lower().replace("*","")==name.lower() or row[0].lower().replace("*","")==name.lower() or name=="World":
+                        if recoveredCount > 0:
+                            c.allrecovered += [x + y for x, y in zip(c.allrecovered , [int(float(x)) for x in row[4:][0:len(c.dates)] if x != ""])]
+                        else:
+                            c.allrecovered = [int(float(x)) for x in row[4:][0:len(c.dates)] if x != ""]
+                        recoveredCount += 1
+                    line_count += 1
             with open('testing/covid-testing-all-observations.csv') as csv_file:
                     csv_reader = csv.reader(csv_file, delimiter=',')
                     line_count = 0
@@ -235,6 +249,7 @@ class Countries:
                         if place.lower() == row[0].lower() and row[11] != "" :
                             dt = datetime.datetime.strptime(newest.split("/")[1].split(".")[0],'%m-%d-%Y').strftime('%m/%d')
                             c.testing = dt +"|{:,.0f}".format(int(float(row[11]))) + " people tested ("+ "{:,.2f}".format(int(float(row[11]))/(c.pop*1000)) + "/K)"
+                            c.allrecovered = [int(row[7])] if row[7].isdigit() else ["?"]
                             break
             return c
         return 0
@@ -337,6 +352,7 @@ class Country:
         self.x =[]
         self.GF=[]
         self.testing = ""
+        self.allrecovered  = ["?"]
         # All.countries = list(set(All.countries))
         All.country_colors[name] = color
         All.countries_list.append(name)

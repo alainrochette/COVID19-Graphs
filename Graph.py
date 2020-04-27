@@ -198,6 +198,7 @@ class Graph():
                 self.inputWidget.set_val("")
                 if not loading: self.select(self.selectedC.name)
             if loading: self.selectedC = None
+            self.inInput = False
             self.draw()
 
 
@@ -284,9 +285,28 @@ class Graph():
         if c.pop >= 0.1: txt +='\n{}  {:,.1f}M'.format("Population:", round(c.pop,2)) #{:15s}
 
         if c.testing != "" and len(c.testing.split("|")[1]) < 33: txt +="\n"
+        cases = "{:,.0f}".format(c.cases[self.dayBefore])
+        casesPerM = "({:,.0f}/M)".format(c.casesPerM[self.dayBefore])
+        deaths = "{:,.0f}".format(c.deaths[self.dayBefore])
+        deathsPerM = "({:,.0f}/M)".format(c.deathsPerM[self.dayBefore])
+        MR =" {:,.1f}%".format(100*c.alldeaths[self.dayBefore]/c.cases[self.dayBefore])
+        txt +='\n{}   {:8.8} {:10.10}'.format("Cases:", cases,casesPerM)
+        txt +='\n{}  {:8.8} {:9.9} {:6.6} '.format("Deaths:", deaths, deathsPerM, MR)
 
-        txt +='\n{}   {:,.0f} {} ({:,.0f}/M)'.format("Cases:", c.cases[self.dayBefore], " "*(20-len(str(c.casesPerM[self.dayBefore]))),c.casesPerM[self.dayBefore])
-        txt +='\n{} {:,.0f} {} ({:,.0f}/M)\n'.format("Deaths:", c.deaths[self.dayBefore], " "*(25-len(str(c.deathsPerM[self.dayBefore]))),c.deathsPerM[self.dayBefore])
+        if c.allrecovered !=  ["?"]:
+            if len(c.allrecovered) > 1:
+                allRec = "{:,.0f}".format(c.allrecovered[self.dayBefore])
+                recoveredRate = "{:,.1f}%".format(100*c.allrecovered[self.dayBefore]/(c.cases[self.dayBefore]))
+                lastDate = ""
+                leng = 17
+            else:
+                allRec = "{:,.0f}".format(c.allrecovered[-1])
+                recoveredRate = "{:,.1f}%".format(100*c.allrecovered[-1]/(c.cases[-1]))
+                lastDate = "[" + c.dates[-1] + "] "
+                leng = 13
+            txt +='\n{} {:8.8}{:13.13} {:5.5}\n'.format("Recov:  ", allRec,lastDate,recoveredRate)
+        else:
+            txt +='\n{} {}\n'.format("Recov.:  ", "?")
 
         if c.testing != "":
             dt = c.testing.split("|")[0]
@@ -296,15 +316,17 @@ class Graph():
             txt +="\n"
             txt += "------- No Testing Info ------\n"
 
-        height = 0.15
-        startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.5)
+        # height = 0.15
+        # startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.5)
+        height = 0.18
+        startheight = min(0.7 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.5)
 
         if self.infoWidget:
             self.infoWidget.set_val("")
             self.infoWidget.set_val(txt)
         else:
             if self.infoBox: self.infoBox.remove()
-            self.infoBox = plt.axes([0.065, startheight, 0.16, height])
+            self.infoBox = plt.axes([0.065, startheight, 0.165, height])
             self.infoBox.set_frame_on(False)
             self.infoWidget = TextBox(self.infoBox, '', txt)
         self.infoWidget.text_disp.set_color([0.3, 0.3, 0.3])
@@ -318,13 +340,13 @@ class Graph():
 
         if not self.removeWidget:
             if self.removeBox: self.removeBox.remove()
-            self.removeBox = plt.axes([0.23, startheight+height-0.055, 0.04, 0.055])
+            self.removeBox = plt.axes([0.235, startheight+height-0.055, 0.04, 0.055])
             self.removeWidget = Button(self.removeBox, 'Remove',color="whitesmoke" ,hovercolor="lightgray")
             self.removeWidget.label.set_fontsize(7)
             self.removeWidget.on_clicked(self.remove)
             if self.All.region != "My List":
                 if self.addToListBox: self.addToListBox.remove()
-                self.addToListBox = plt.axes([0.23, startheight+height-0.12, 0.04, 0.055])
+                self.addToListBox = plt.axes([0.235, startheight+height-0.12, 0.04, 0.055])
                 self.addToListWidget = Button(self.addToListBox, 'Add To\nMy List',color="whitesmoke" ,hovercolor="lightgray")
                 self.addToListWidget.label.set_fontsize(6.5)
                 self.addToListWidget.on_clicked(self.addToList)
@@ -408,10 +430,12 @@ class Graph():
                 self.dayBefore = -1
                 if self.selectedC:
                     self.showAll  = False
-                self.select(None)
+
                 if "Big" not in self.clickedG:
                     self.big = self.clickedG
                     self.graph()
+                else:
+                    self.select(None)
             else:
                 self.inInput = True
         except TypeError:
@@ -516,7 +540,7 @@ class Graph():
                 settingsWidgets.on_clicked(self.toggleSettings)
 
                 self.refreshBox = plt.axes([0.92, 0.8, 0.06, 0.035])
-                refreshWidget = Button(self.refreshBox , 'Refresh Data',color="whitesmoke" ,hovercolor="lightgray")
+                refreshWidget = Button(self.refreshBox , 'Update Data',color="whitesmoke" ,hovercolor="lightgray")
                 refreshWidget.label.set_fontsize(7)
                 refreshWidget.on_clicked(self.refreshData)
                 self.refreshBox.set_visible(False)
