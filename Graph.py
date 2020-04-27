@@ -10,6 +10,8 @@ from scipy.ndimage.filters import gaussian_filter1d
 import textwrap
 from datetime import datetime
 import pickle
+# plt.rc('text', usetex=True)
+
 #[]   +    =     {}
 
 
@@ -281,8 +283,8 @@ class Graph():
         name = c.name.split(",")[0] if "," in c.name else c.name
 
         txt ='{:16.16}  ({:3.2f} GF) {date}'.format(name, self.averageGrowthFactor(c),date="[" + c.dates[self.dayBefore] + "]" if self.dayBefore < -1 else "")
-        if c.pop < 0.1: txt +='\n{}  {:,.1f}K'.format("Population:", round(c.pop*1000,2))
-        if c.pop >= 0.1: txt +='\n{}  {:,.1f}M'.format("Population:", round(c.pop,2)) #{:15s}
+        if c.pop < 0.1: txt +='\n' + "{}  {:,.1f}K".format("Population:", round(c.pop*1000,2))
+        if c.pop >= 0.1: txt +='\n' + "{}  {:,.1f}M".format("Population:", round(c.pop,2)) #{:15s}
 
         if c.testing != "" and len(c.testing.split("|")[1]) < 33: txt +="\n"
         cases = "{:,.0f}".format(c.cases[self.dayBefore])
@@ -290,8 +292,8 @@ class Graph():
         deaths = "{:,.0f}".format(c.deaths[self.dayBefore])
         deathsPerM = "({:,.0f}/M)".format(c.deathsPerM[self.dayBefore])
         MR =" {:,.1f}%".format(100*c.alldeaths[self.dayBefore]/c.cases[self.dayBefore])
-        txt +='\n{}   {:8.8} {:10.10}'.format("Cases:", cases,casesPerM)
-        txt +='\n{}  {:8.8} {:9.9} {:6.6} '.format("Deaths:", deaths, deathsPerM, MR)
+        txt +='\n' + r"$\bf{}$:   {:8.8} {:10.10}".format("Cases", cases,casesPerM)
+        txt +='\n' + r"$\bf{}$: {:8.8}{:9.9}{:6.6}".format("Deaths", deaths, deathsPerM, MR)
 
         if c.allrecovered !=  ["?"]:
             if len(c.allrecovered) > 1:
@@ -304,17 +306,17 @@ class Graph():
                 recoveredRate = "{:,.1f}%".format(100*c.allrecovered[-1]/(c.cases[-1]))
                 lastDate = "[" + c.dates[-1] + "] "
                 leng = 13
-            txt +='\n{} {:8.8}{:13.13} {:5.5}\n'.format("Recov:  ", allRec,lastDate,recoveredRate)
+            txt +='\n' + r"$\bf{}$:   {:8.8}{:13.13} {:5.5}".format("Recov  ", allRec,lastDate,recoveredRate)
         else:
-            txt +='\n{} {}\n'.format("Recov.:  ", "?")
+            txt +='\n' + r"$\bf{}$:  {}".format("Recov  ", "?")
 
         if c.testing != "":
             dt = c.testing.split("|")[0]
-            txt += "------------ " + dt + " -----------\n"
+            txt += "\n------------------ [" + dt + "] -----------------\n"
             txt += textwrap.fill(c.testing.split("|")[1],width=32)
         else:
             txt +="\n"
-            txt += "------- No Testing Info ------\n"
+            txt += "------------- No Testing Info ------------\n"
 
         # height = 0.15
         # startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.5)
