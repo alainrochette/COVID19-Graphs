@@ -141,14 +141,6 @@ class Graph():
                 pickle.dump(mynewcountries, fp)
             self.selectedC = selected
             self.change_regions("My List",selected)
-        # prev_region = self.All.region
-        # selected = self.selectedC
-        # self.change_regions("My List")
-        # print("ADDING",selected.name)
-        # self.selectedC = selected
-        # self.add(self.selectedC.name)
-        # print("ADDED",selected.name)
-        # self.draw()
 
     def add(self,text, loading=False):
         if not loading: self.limit = 120
@@ -175,15 +167,11 @@ class Graph():
                     ax.relim()
                     ax.autoscale_view()
 
-
                     handles, labels = ax.get_legend_handles_labels()
-                    # sort both labels and handles by labels
-                    # self.order(g.replace("Big",""))
                     newhandles, newlabels = self.labelOrder(handles,labels, g.replace("Big",""))
                     self.graphsHandles[g] = newhandles
                     self.graphsLabels[g] = newlabels
 
-                    # maxx = ax.get_xlim()[1]*1.04
                     minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
                     minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
                     ax.set_xlim(left=minx)
@@ -224,7 +212,6 @@ class Graph():
             ind = self.graphsLabels[graph].index(self.selectedC.name)
             self.graphsHandles[graph].remove(self.graphsHandles[graph][ind])
             self.graphsLabels[graph].remove(self.selectedC.name)
-
         self.select(None)
         self.infoWidget = None
         self.removeWidget = None
@@ -234,23 +221,11 @@ class Graph():
         for graph in self.graphs:
             legFontSize = SMALL_SIZE - 1 if "Big" not in graph else BIGGER_SIZE-0.5
             self.graphsAx[graph].legend(self.graphsHandles[graph],self.graphsLabels[graph],fontsize = legFontSize,fancybox=True,loc="upper left", ncol=1)
-            # if self.selectedC and self.dayBefore < -1:
-            #     if graph in self.graphDateLine and self.graphDateLine[graph]:
-            #         self.graphDateLine[graph].remove()
-            #         del self.graphDateLine[graph]
-            #     self.graphDateLine[graph] = self.graphsAx[graph].axvline(self.All.dates[self.dayBefore],ymin=0,ymax=10000,color="lightgray" )
-            # elif graph in self.graphDateLine:
-            #     self.graphDateLine[graph].remove()
-            #     del self.graphDateLine[graph]
         if self.graphs[-1] in self.graphDateLine and self.graphDateLine[self.graphs[-1]]:
             self.graphDateLine[self.graphs[-1]].remove()
             del self.graphDateLine[self.graphs[-1]]
         if self.selectedC and self.dayBefore < -1:
             self.graphDateLine[self.graphs[-1]] = self.graphsAx[self.graphs[-1]].axvline(self.All.dates[self.dayBefore],ymin=0,ymax=10000,color="lightgray" )
-        # elif self.graphs[-1] in self.graphDateLine:
-        #     self.graphDateLine[self.graphs[-1]].remove()
-        #     del self.graphDateLine[self.graphs[-1]]
-        # print(self.startWidget)
         if self.startWidget: self.startWidget.set_val("")
         plt.figure("Main")
         plt.draw()
@@ -267,7 +242,6 @@ class Graph():
                         minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
                         ax.set_xlim(left=minx)
                     self.draw()
-
                 else:
                     self.load(self.All.region,int(text))
             elif "/" in text and text in self.All.dates:
@@ -276,7 +250,6 @@ class Graph():
                     self.All.days_since = text
                     ax.set_xlim(left=self.All.dates.index(text))
                 self.draw()
-                # self.load(self.All.region,text)
         except ValueError:
             pass
 
@@ -294,15 +267,9 @@ class Graph():
         name = c.name.split(",")[0] if "," in c.name else c.name.replace(" ","\ ")
         place = r"$\bf{}$".format(name.upper())
         dateBef = "{date}".format(date=c.dates[self.dayBefore])
-
-        if c.pop < 0.1: pop = "pop {:,.1f}K".format(round(c.pop*1000,2))
-        if c.pop >= 0.1: pop = "pop {:,.1f}M".format(round(c.pop,2))
+        pop = "pop {:,.1f}K".format(round(c.pop*1000,2)) if c.pop < 0.1 else "pop {:,.1f}M".format(round(c.pop,2))
         txt = "{} {}\n".format(place,pop.rjust(50-2*(len(place)), " "))
         if dateBef != "": txt += "――――――― {} ――――――".format(dateBef)
-        # if c.pop < 0.1: txt +='\n' + "{}  {:,.1f}K".format("Population:", round(c.pop*1000,2))
-        # if c.pop >= 0.1: txt +='\n' + "{}  {:,.1f}M".format("Population:", round(c.pop,2)) #{:15s}
-
-
 
         cases = "{:,.0f}".format(c.cases[self.dayBefore])
         casesPerM = "({:,.0f}/M)".format(c.casesPerM[self.dayBefore])
@@ -326,12 +293,10 @@ class Graph():
                 allRec = "{:,.0f}".format(c.allrecovered[self.dayBefore])
                 recoveredRate = "({:,.1f}%)".format(100*c.allrecovered[self.dayBefore]/(c.cases[self.dayBefore]))
                 lastDate = ""
-                leng = 17
             else:
                 allRec = "{:,.0f}".format(c.allrecovered[-1])
                 recoveredRate = "({:,.1f}%)".format(100*c.allrecovered[-1]/(c.cases[-1]))
                 lastDate = "[" + c.dates[-1] + "] "
-                leng = 13
             txt +='\n  ' + r"$\bf{}$:  {:<10}{:^9}{:>7}".format("  Recov", allRec,recoveredRate,lastDate)
         else:
             txt +='\n  ' + r"$\bf{}$:  {}".format("  Recov", "?")
@@ -345,9 +310,6 @@ class Graph():
         else:
             txt += "\n―――― No Testing Info ――――\n"
 
-
-        # height = 0.15
-        # startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.5)
         height = 0.24
         startheight = min(0.65 - (max(7,len(self.graphsLabels[self.clickedG]))/32),0.5)
 
@@ -460,7 +422,6 @@ class Graph():
                 self.dayBefore = -1
                 if self.selectedC:
                     self.showAll  = False
-
                 if "Big" not in self.clickedG:
                     self.big = self.clickedG
                     self.graph()
@@ -506,8 +467,8 @@ class Graph():
         plt.ion()
         self.prep()
         self.graphs =  ["casesPerM","newcasesPerM","deathsPerM","newdeathsPerM"] + ["Big" + self.big]
-
-        if (self.All.days_since ==0 or "/" in str(self.All.days_since)): self.All.dates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in self.All.dates]
+        if (self.All.days_since ==0 or "/" in str(self.All.days_since)):
+            self.All.dates = [d.split("/")[0] + "/"+ d.split("/")[1] for d in self.All.dates]
         sp = 1
         if self.fig: plt.close('all')
         self.infoWidget = None
@@ -549,16 +510,13 @@ class Graph():
             fig.canvas.mpl_connect('button_press_event', self.onclick)
             if "Big" in g:
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
-                # inputBox = plt.axes([0.24, 0.675, 0.1, 0.055])
                 inputBox = plt.axes([0.066, 0.9, 0.14, 0.055])
                 self.inputWidget = TextBox(inputBox, 'Add\nPlace:', initial="", hovercolor="lightgray")
                 self.inputWidget.on_submit(self.add)
                 self.inputWidget.label.set_size(9)
                 self.inputWidget.label.set_color("0.4")
 
-
                 self.startBox = plt.axes([0.85, 0.91, 0.03, 0.035])
-
                 self.startWidget = TextBox(self.startBox, 'Start from  \ncase/date: ', initial='', hovercolor="lightgray")
                 self.startWidget.label.set_color("0.6")
                 self.startWidget.label.set_size(7)
@@ -587,21 +545,13 @@ class Graph():
                 self.helpBox.set_visible(False)
 
                 self.helpText= ax.text(0.938, 0.73, ("\n".join(["•Type any Place: (Country,\n  US City, US State) \n",
-
                                                     "     Examples:\n          -Lithuania\n          -Houston, Texas\n          -California\n",
-
                                                     "•Choose starting date/\n  days since Xth case\n",
-
                                                     "•Click Place in Legend for\n  More Info / to Remove.\n",
-
                                                     "•With place selected, use\n  arrow keys to navigate\n",
-
                                                     "•GF: Growth Factor: Rate of\n  growth over past week\n    <1 slowing down\n    >1 speeding up"])), transform=ax.transAxes, fontsize=6,
                                                         verticalalignment='top', color ="darkgray",bbox=props)
                 self.helpText.set_visible(False)
-
-
-
                 self.LUtext= ax.text(0.958, 1, "Last Updated:\n "+self.lastUpdated.strftime("%m/%d %H:%M"), transform=ax.transAxes, fontsize=7,
                         verticalalignment='top', color ="darkgray")
 

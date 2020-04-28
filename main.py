@@ -4,7 +4,6 @@ import pickle
 import os
 import sys
 
-
 if "--install" in sys.argv:
     os.system("clear")
     print("---- Installing scipy, matplotlib ----\n")

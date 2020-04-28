@@ -256,7 +256,6 @@ class Countries:
 
 
     def clean(self,c,type):
-
         days_since = 0 if "/" in str(self.days_since) else self.days_since
         if type == "cases":
             c.day = 0
@@ -267,7 +266,6 @@ class Countries:
             c.days = len(c.dates)-c.day
             c.x =[i for i in range(0,c.days)]
         all = getattr(c,"all"+type)
-        norm = getattr(c,type)
         norm =  [all[0]]
         max = all[0]
         for x in range(1,len(all)):
@@ -276,7 +274,6 @@ class Countries:
                 max = all[x]
             else:
                 norm.append(max)
-        new = getattr(c,"new"+type)
         new = [0] + [norm[x] - norm[x-1] for x in range(1,len(norm))]
         norm= norm[c.day:]
         new = new[c.day:]
@@ -334,7 +331,6 @@ class Country:
         self.vis = 0
         self.color= color
         self.defcolor= color
-
         self.lightcolor = light_colors[color] if isinstance(color, str) else [x + (1 - x) * 0.8 for x in color]
         self.dates = []
         self.newcases = []
@@ -353,8 +349,5 @@ class Country:
         self.GF=[]
         self.testing = ""
         self.allrecovered  = ["?"]
-        # All.countries = list(set(All.countries))
         All.country_colors[name] = color
         All.countries_list.append(name)
-        # All.countries.append(self)
-        # All.countries = list(set(All.countries))
