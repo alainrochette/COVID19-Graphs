@@ -293,12 +293,12 @@ class Graph():
 
         name = c.name.split(",")[0] if "," in c.name else c.name.replace(" ","\ ")
         place = r"$\bf{}$".format(name.upper())
-        dateBef = "{date}".format(date="[" + c.dates[self.dayBefore] + "]" if self.dayBefore < -1 else "")
+        dateBef = "{date}".format(date=c.dates[self.dayBefore])
 
-        if c.pop < 0.1: pop = "{:,.1f}K".format(round(c.pop*1000,2))
-        if c.pop >= 0.1: pop = "{:,.1f}M".format(round(c.pop,2))
-        txt = "{}  pop {}\n".format(place,pop)
-        if dateBef != "": txt += "------------------ {} -----------------".format(dateBef)
+        if c.pop < 0.1: pop = "pop {:,.1f}K".format(round(c.pop*1000,2))
+        if c.pop >= 0.1: pop = "pop {:,.1f}M".format(round(c.pop,2))
+        txt = "{} {}\n".format(place,pop.rjust(50-2*(len(place)), " "))
+        if dateBef != "": txt += "――――――― {} ――――――".format(dateBef)
         # if c.pop < 0.1: txt +='\n' + "{}  {:,.1f}K".format("Population:", round(c.pop*1000,2))
         # if c.pop >= 0.1: txt +='\n' + "{}  {:,.1f}M".format("Population:", round(c.pop,2)) #{:15s}
 
@@ -315,11 +315,11 @@ class Graph():
         deathsGF = "({:3.2f} GF)".format(self.averageGrowthFactor(c, "deaths"))
 
         MR =" {:,.1f}%".format(100*c.alldeaths[self.dayBefore]/c.cases[self.dayBefore])
-        txt +='\n  ' + r"$\bf{}$:  {:8.8} {:10.10}".format("Cases", cases,casesPerM)
-        txt +='\n' + "{}:  {:8.8} {:10.10}".format("      New", newcases,casesGF)
-        txt +='\n' + r"$\bf{}$:  {:8.8}{:9.9}".format("Deaths", deaths, deathsPerM)
-        txt +='\n' + "{}:  {:8.8} {:10.10}".format("      New", newdeaths,deathsGF)
-        txt +='\n' + "{}: {:6.6}".format("        MR", MR)
+        txt +='\n  ' + r"$\bf{}$:  {:<10}{:>10}".format("Cases", cases,casesPerM)
+        txt +='\n' + "{}:  {:<11}{:>10}".format("      New", newcases,casesGF)
+        txt +='\n' + r"$\bf{}$:  {:<12}{:>10}".format("Deaths", deaths, deathsPerM)
+        txt +='\n' + "{}:  {:<12}{:>10}".format("      New", newdeaths,deathsGF)
+        txt +='\n' + "{}: {:<10}".format("        MR", MR)
 
         if c.allrecovered !=  ["?"]:
             if len(c.allrecovered) > 1:
@@ -332,17 +332,18 @@ class Graph():
                 recoveredRate = "({:,.1f}%)".format(100*c.allrecovered[-1]/(c.cases[-1]))
                 lastDate = "[" + c.dates[-1] + "] "
                 leng = 13
-            txt +='\n  ' + r"$\bf{}$:  {:8.8} {:8.8} {:7.7}".format("  Recov", allRec,recoveredRate,lastDate)
+            txt +='\n  ' + r"$\bf{}$:  {:<10}{:^9}{:>7}".format("  Recov", allRec,recoveredRate,lastDate)
         else:
             txt +='\n  ' + r"$\bf{}$:  {}".format("  Recov", "?")
 
         if c.testing == "" or (c.testing != "" and len(c.testing.split("|")[1]) < 33): txt +="\n"
         if c.testing != "":
             dt = c.testing.split("|")[0]
-            txt += "\n------------------ [" + dt + "] -----------------\n"
+            if dt[0] == "0": dt = dt[1:]
+            txt += "\n――――――― " + dt + " ――――――\n"
             txt += textwrap.fill(c.testing.split("|")[1],width=32)
         else:
-            txt += "\n------------- No Testing Info ------------\n"
+            txt += "\n―――― No Testing Info ――――\n"
 
 
         # height = 0.15
