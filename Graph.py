@@ -297,8 +297,8 @@ class Graph():
 
         if c.pop < 0.1: pop = "{:,.1f}K".format(round(c.pop*1000,2))
         if c.pop >= 0.1: pop = "{:,.1f}M".format(round(c.pop,2))
-        txt = "{}{} Pop: {}\n".format(place," "*(20-len(name)),pop)
-        txt += "                 {}".format(dateBef)
+        txt = "{}  pop: {}\n".format(place,pop)
+        if dateBef != "": txt += "------------------ {} -----------------".format(dateBef)
         # if c.pop < 0.1: txt +='\n' + "{}  {:,.1f}K".format("Population:", round(c.pop*1000,2))
         # if c.pop >= 0.1: txt +='\n' + "{}  {:,.1f}M".format("Population:", round(c.pop,2)) #{:15s}
 
@@ -592,7 +592,9 @@ class Graph():
 
                                                     "•Click Place in Legend for\n  More Info / to Remove.\n",
 
-                                                    "•With place selected, use\n  arrow keys to navigate\n",])), transform=ax.transAxes, fontsize=6,
+                                                    "•With place selected, use\n  arrow keys to navigate\n",
+
+                                                    "•GF: Growth Factor: Rate of\n  growth over past week\n"])), transform=ax.transAxes, fontsize=6,
                                                         verticalalignment='top', color ="darkgray",bbox=props)
                 self.helpText.set_visible(False)
 
