@@ -549,7 +549,8 @@ class Graph():
                                                     "•Choose starting date/\n  days since Xth case\n",
                                                     "•Click Place in Legend for\n  More Info / to Remove.\n",
                                                     "•With place selected, use\n  arrow keys to navigate\n",
-                                                    "•GF: Growth Factor: Rate of\n  growth over past week\n    <1 slowing down\n    >1 speeding up"])), transform=ax.transAxes, fontsize=6,
+                                                    "•GF: Growth Factor: Rate of\n  growth over past week\n       <1 slowing down\n       >1 speeding up\n",
+                                                    "•MR: Mortality Rate",])), transform=ax.transAxes, fontsize=6,
                                                         verticalalignment='top', color ="darkgray",bbox=props)
                 self.helpText.set_visible(False)
                 self.LUtext= ax.text(0.958, 1, "Last Updated:\n "+self.lastUpdated.strftime("%m/%d %H:%M"), transform=ax.transAxes, fontsize=7,

@@ -1,5 +1,3 @@
-
-from Graph import *
 import pickle
 import os
 import sys
@@ -19,6 +17,8 @@ except FileNotFoundError:
     lastUpdated = "???"
     with open('myCache/lastUpdated.txt',  'wb') as fp:
         pickle.dump(lastUpdated, fp)
+
+from Graph import *
 
 graph = Graph(lastUpdated)
 graph.load("My List")
