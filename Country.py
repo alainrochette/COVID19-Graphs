@@ -12,7 +12,7 @@ country_colors ={"France":"cornflowerblue", "Ecuador":"cornflowerblue","Honduras
                 "Massachusetts":"skyblue", "Argentina":"skyblue", "Luxembourg":"skyblue", "Israel":"skyblue","Madagascar":"skyblue",
                 "Panama":"deepskyblue", "Georgia*":"deepskyblue",
                 "Uruguay":"steelblue", "Iceland":"steelblue", "Singapore":"steelblue", "Pennsylvania":"steelblue",
-                "Turkey":"darkorchid", "New Jersey":"darkorchid", "US":"darkorchid","Paraguay":"darkorchid",
+                "Turkey":"darkorchid", "New Jersey":"darkorchid", "US":"darkorchid","Paraguay":"darkorchid","Andorra":"darkorchid",
                 "Delaware":"gold", "Spain":"gold", "Bolivia":"gold", "Saudi Arabia":"gold","Haiti":"gold","Egypt":"gold",
                 "Connecticut":"limegreen", "Italy":"limegreen", "Qatar":"limegreen", "Brazil":"limegreen", "Cameroon":"limegreen",
                 "District of Columbia":"forestgreen", "Mexico":"forestgreen","Nigeria":"forestgreen",
@@ -290,7 +290,7 @@ class Countries:
                         "Europe":["Germany", "Italy", "Spain", "United Kingdom",
                                 "France", "Switzerland", "Poland", "Sweden",
                                 "Austria", "Belgium", "Portugal", "Greece", "Luxembourg",
-                                "Netherlands", "Denmark", "Ireland","Romania","Serbia","Iceland", "Finland"],
+                                "Netherlands", "Denmark", "Ireland","Romania","Serbia","Iceland", "Finland","Andorra"],
                         "States":["Alabama", "Alaska", "American Samoa",
                                 "Arizona", "Arkansas", "California", "Colorado",
                                 "Connecticut", "Delaware", "District of Columbia",
@@ -310,8 +310,8 @@ class Countries:
                                     "South Africa", "Egypt", "Algeria",
                                     "Cameroon", "Cote d'Ivoire"],
                         "Americas":[ "Mexico","Honduras", "Cuba", "Costa Rica",
-                                    "Haiti", "Dominican Republic","Guatemala"],
-                        "Other": [ "Russia","Canada", "New Zealand","Australia","Guam","Greenland"]
+                                    "Haiti", "Dominican Republic","Guatemala","Canada","Jamaica"],
+                        "Other": [ "Russia", "New Zealand","Australia","Guam","Greenland","Reunion","Kazakhstan","Seychelles","Belarus"]
                         }
         try:
             with open('myCache/My_List.txt',  'rb') as fp:

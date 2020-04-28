@@ -94,7 +94,7 @@ class Graph():
 
     def averageGrowthFactor(self,c, type):
         gf = c.casesGF if type == "cases" else c.deathsGF
-        return sum(gf[-6 + self.dayBefore + 1:len(gf) + self.dayBefore + 1])/6
+        return sum(gf[-7 + self.dayBefore + 1:len(gf) + self.dayBefore + 1])/7
 
     def showL(self,c,data):
     	return [i*c.vis for i in data]
@@ -166,7 +166,7 @@ class Graph():
                     gx = c.dates if self.All.days_since == 0 or "/" in str(self.All.days_since) else c.x
                     gy =getattr(c,g.replace("Big",""))[0:len(gx)]
                     if len(gy) < len(gx): gx = gx[0:len(gy)]
-                    ysmoothed = gaussian_filter1d(gy, sigma=1)
+                    ysmoothed = gaussian_filter1d(gy, sigma=1.1)
                     if c.name== "World":
                         if "PerM" in g: ax.plot(gx, ysmoothed[0:len(gx)],'k--',label= c.name)
                     else:
@@ -292,12 +292,12 @@ class Graph():
         self.selectedC = c
 
         name = c.name.split(",")[0] if "," in c.name else c.name.replace(" ","\ ")
-        place = r"$\bf{}$".format(name)
+        place = r"$\bf{}$".format(name.upper())
         dateBef = "{date}".format(date="[" + c.dates[self.dayBefore] + "]" if self.dayBefore < -1 else "")
 
         if c.pop < 0.1: pop = "{:,.1f}K".format(round(c.pop*1000,2))
         if c.pop >= 0.1: pop = "{:,.1f}M".format(round(c.pop,2))
-        txt = "{}  pop: {}\n".format(place,pop)
+        txt = "{}  pop {}\n".format(place,pop)
         if dateBef != "": txt += "------------------ {} -----------------".format(dateBef)
         # if c.pop < 0.1: txt +='\n' + "{}  {:,.1f}K".format("Population:", round(c.pop*1000,2))
         # if c.pop >= 0.1: txt +='\n' + "{}  {:,.1f}M".format("Population:", round(c.pop,2)) #{:15s}
@@ -324,25 +324,26 @@ class Graph():
         if c.allrecovered !=  ["?"]:
             if len(c.allrecovered) > 1:
                 allRec = "{:,.0f}".format(c.allrecovered[self.dayBefore])
-                recoveredRate = "{:,.1f}%".format(100*c.allrecovered[self.dayBefore]/(c.cases[self.dayBefore]))
+                recoveredRate = "({:,.1f}%)".format(100*c.allrecovered[self.dayBefore]/(c.cases[self.dayBefore]))
                 lastDate = ""
                 leng = 17
             else:
                 allRec = "{:,.0f}".format(c.allrecovered[-1])
-                recoveredRate = "{:,.1f}%".format(100*c.allrecovered[-1]/(c.cases[-1]))
+                recoveredRate = "({:,.1f}%)".format(100*c.allrecovered[-1]/(c.cases[-1]))
                 lastDate = "[" + c.dates[-1] + "] "
                 leng = 13
-            txt +='\n  ' + r"$\bf{}$:  {:8.8}{:13.13}{:6.6}".format("  Recov", allRec,lastDate,recoveredRate)
+            txt +='\n  ' + r"$\bf{}$:  {:8.8} {:8.8} {:7.7}".format("  Recov", allRec,recoveredRate,lastDate)
         else:
             txt +='\n  ' + r"$\bf{}$:  {}".format("  Recov", "?")
 
+        if c.testing == "" or (c.testing != "" and len(c.testing.split("|")[1]) < 33): txt +="\n"
         if c.testing != "":
             dt = c.testing.split("|")[0]
             txt += "\n------------------ [" + dt + "] -----------------\n"
             txt += textwrap.fill(c.testing.split("|")[1],width=32)
         else:
             txt += "\n------------- No Testing Info ------------\n"
-        if c.testing == "" or (c.testing != "" and len(c.testing.split("|")[1]) < 33): txt +="\n"
+
 
         # height = 0.15
         # startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.5)
@@ -594,7 +595,7 @@ class Graph():
 
                                                     "•With place selected, use\n  arrow keys to navigate\n",
 
-                                                    "•GF: Growth Factor: Rate of\n  growth over past week\n"])), transform=ax.transAxes, fontsize=6,
+                                                    "•GF: Growth Factor: Rate of\n  growth over past week\n    <1 slowing down\n    >1 speeding up"])), transform=ax.transAxes, fontsize=6,
                                                         verticalalignment='top', color ="darkgray",bbox=props)
                 self.helpText.set_visible(False)
 
