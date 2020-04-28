@@ -87,13 +87,14 @@ class Graph():
         mpl.rcParams.update(self.params)
 
 
-    def growthFactor(self,c):
-        L = c.cases
+    def growthFactor(self,c,type):
+        L = getattr(c, type)
         gf = [1,1]+ [(L[i]-L[i-1])/(L[i-1]-L[i-2]) if (L[i-1]-L[i-2])!=0 else 1 for i in range(2,len(L))]
         return gf
 
-    def averageGrowthFactor(self,c):
-        return sum(c.GF[-6 + self.dayBefore + 1:len(c.GF) + self.dayBefore + 1])/6
+    def averageGrowthFactor(self,c, type):
+        gf = c.casesGF if type == "cases" else c.deathsGF
+        return sum(gf[-6 + self.dayBefore + 1:len(gf) + self.dayBefore + 1])/6
 
     def showL(self,c,data):
     	return [i*c.vis for i in data]
@@ -120,13 +121,15 @@ class Graph():
                     c.casesPerM = [x/c.pop for x in c.cases]
                     c.deathsPerM = [x/c.pop for x in c.deaths]
                     c.newdeathsPerM = [x/c.pop for x in c.newdeaths]
-                    c.GF = self.growthFactor(c)
+                    c.casesGF = self.growthFactor(c,"cases")
+                    c.deathsGF = self.growthFactor(c,"deaths")
         elif not c.newcasesPerM:
             c.newcasesPerM = [x/c.pop for x in c.newcases]
             c.casesPerM = [x/c.pop for x in c.cases]
             c.deathsPerM = [x/c.pop for x in c.deaths]
             c.newdeathsPerM = [x/c.pop for x in c.newdeaths]
-            c.GF = self.growthFactor(c)
+            c.casesGF = self.growthFactor(c,"cases")
+            c.deathsGF = self.growthFactor(c,"deaths")
 
     def addToList(self,event):
         selected = self.selectedC
@@ -231,15 +234,22 @@ class Graph():
         for graph in self.graphs:
             legFontSize = SMALL_SIZE - 1 if "Big" not in graph else BIGGER_SIZE-0.5
             self.graphsAx[graph].legend(self.graphsHandles[graph],self.graphsLabels[graph],fontsize = legFontSize,fancybox=True,loc="upper left", ncol=1)
-            if self.selectedC and self.dayBefore < -1:
-                if graph in self.graphDateLine and self.graphDateLine[graph]:
-                    self.graphDateLine[graph].remove()
-                    del self.graphDateLine[graph]
-                self.graphDateLine[graph] = self.graphsAx[graph].axvline(self.All.dates[self.dayBefore],ymin=0,ymax=10000,color="lightgray" )
-            elif graph in self.graphDateLine:
-                self.graphDateLine[graph].remove()
-                del self.graphDateLine[graph]
-
+            # if self.selectedC and self.dayBefore < -1:
+            #     if graph in self.graphDateLine and self.graphDateLine[graph]:
+            #         self.graphDateLine[graph].remove()
+            #         del self.graphDateLine[graph]
+            #     self.graphDateLine[graph] = self.graphsAx[graph].axvline(self.All.dates[self.dayBefore],ymin=0,ymax=10000,color="lightgray" )
+            # elif graph in self.graphDateLine:
+            #     self.graphDateLine[graph].remove()
+            #     del self.graphDateLine[graph]
+        if self.graphs[-1] in self.graphDateLine and self.graphDateLine[self.graphs[-1]]:
+            self.graphDateLine[self.graphs[-1]].remove()
+            del self.graphDateLine[self.graphs[-1]]
+        if self.selectedC and self.dayBefore < -1:
+            self.graphDateLine[self.graphs[-1]] = self.graphsAx[self.graphs[-1]].axvline(self.All.dates[self.dayBefore],ymin=0,ymax=10000,color="lightgray" )
+        # elif self.graphs[-1] in self.graphDateLine:
+        #     self.graphDateLine[self.graphs[-1]].remove()
+        #     del self.graphDateLine[self.graphs[-1]]
         # print(self.startWidget)
         if self.startWidget: self.startWidget.set_val("")
         plt.figure("Main")
@@ -280,20 +290,36 @@ class Graph():
         plt.figure("Main")
         plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
         self.selectedC = c
-        name = c.name.split(",")[0] if "," in c.name else c.name
 
-        txt ='{:16.16}  ({:3.2f} GF) {date}'.format(name, self.averageGrowthFactor(c),date="[" + c.dates[self.dayBefore] + "]" if self.dayBefore < -1 else "")
-        if c.pop < 0.1: txt +='\n' + "{}  {:,.1f}K".format("Population:", round(c.pop*1000,2))
-        if c.pop >= 0.1: txt +='\n' + "{}  {:,.1f}M".format("Population:", round(c.pop,2)) #{:15s}
+        name = c.name.split(",")[0] if "," in c.name else c.name.replace(" ","\ ")
+        place = r"$\bf{}$".format(name)
+        dateBef = "{date}".format(date="[" + c.dates[self.dayBefore] + "]" if self.dayBefore < -1 else "")
 
-        if c.testing != "" and len(c.testing.split("|")[1]) < 33: txt +="\n"
+        if c.pop < 0.1: pop = "{:,.1f}K".format(round(c.pop*1000,2))
+        if c.pop >= 0.1: pop = "{:,.1f}M".format(round(c.pop,2))
+        txt = "{}{} Pop: {}\n".format(place," "*(20-len(name)),pop)
+        txt += "                 {}".format(dateBef)
+        # if c.pop < 0.1: txt +='\n' + "{}  {:,.1f}K".format("Population:", round(c.pop*1000,2))
+        # if c.pop >= 0.1: txt +='\n' + "{}  {:,.1f}M".format("Population:", round(c.pop,2)) #{:15s}
+
+
+
         cases = "{:,.0f}".format(c.cases[self.dayBefore])
         casesPerM = "({:,.0f}/M)".format(c.casesPerM[self.dayBefore])
+        newcases = "{:,.0f}".format(c.cases[self.dayBefore] - c.cases[self.dayBefore-1])
+        casesGF = "({:3.2f} GF)".format(self.averageGrowthFactor(c, "cases"))
+
         deaths = "{:,.0f}".format(c.deaths[self.dayBefore])
         deathsPerM = "({:,.0f}/M)".format(c.deathsPerM[self.dayBefore])
+        newdeaths  = "{:,.0f}".format(c.deaths[self.dayBefore] - c.deaths[self.dayBefore-1])
+        deathsGF = "({:3.2f} GF)".format(self.averageGrowthFactor(c, "deaths"))
+
         MR =" {:,.1f}%".format(100*c.alldeaths[self.dayBefore]/c.cases[self.dayBefore])
-        txt +='\n' + r"$\bf{}$:   {:8.8} {:10.10}".format("Cases", cases,casesPerM)
-        txt +='\n' + r"$\bf{}$: {:8.8}{:9.9}{:6.6}".format("Deaths", deaths, deathsPerM, MR)
+        txt +='\n  ' + r"$\bf{}$:  {:8.8} {:10.10}".format("Cases", cases,casesPerM)
+        txt +='\n' + "{}:  {:8.8} {:10.10}".format("      New", newcases,casesGF)
+        txt +='\n' + r"$\bf{}$:  {:8.8}{:9.9}".format("Deaths", deaths, deathsPerM)
+        txt +='\n' + "{}:  {:8.8} {:10.10}".format("      New", newdeaths,deathsGF)
+        txt +='\n' + "{}: {:6.6}".format("        MR", MR)
 
         if c.allrecovered !=  ["?"]:
             if len(c.allrecovered) > 1:
@@ -306,22 +332,22 @@ class Graph():
                 recoveredRate = "{:,.1f}%".format(100*c.allrecovered[-1]/(c.cases[-1]))
                 lastDate = "[" + c.dates[-1] + "] "
                 leng = 13
-            txt +='\n' + r"$\bf{}$:   {:8.8}{:13.13} {:5.5}".format("Recov  ", allRec,lastDate,recoveredRate)
+            txt +='\n  ' + r"$\bf{}$:  {:8.8}{:13.13}{:6.6}".format("  Recov", allRec,lastDate,recoveredRate)
         else:
-            txt +='\n' + r"$\bf{}$:  {}".format("Recov  ", "?")
+            txt +='\n  ' + r"$\bf{}$:  {}".format("  Recov", "?")
 
         if c.testing != "":
             dt = c.testing.split("|")[0]
             txt += "\n------------------ [" + dt + "] -----------------\n"
             txt += textwrap.fill(c.testing.split("|")[1],width=32)
         else:
-            txt +="\n"
-            txt += "------------- No Testing Info ------------\n"
+            txt += "\n------------- No Testing Info ------------\n"
+        if c.testing == "" or (c.testing != "" and len(c.testing.split("|")[1]) < 33): txt +="\n"
 
         # height = 0.15
         # startheight = min(0.74 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.5)
-        height = 0.18
-        startheight = min(0.7 - (max(5,len(self.graphsLabels[self.clickedG]))/32),0.5)
+        height = 0.24
+        startheight = min(0.65 - (max(7,len(self.graphsLabels[self.clickedG]))/32),0.5)
 
         if self.infoWidget:
             self.infoWidget.set_val("")
