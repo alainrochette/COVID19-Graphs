@@ -176,8 +176,8 @@ class Countries:
                     for row in reversed(list(csv_reader)):
                         n =  row[0].lower().split(" - ")[0].replace("south korea", "korea, south")
                         if ("CDC" not in row[0]) and ((name.lower() ==n) or (name=="US" and n =="united states")) :
-                            dt = datetime.datetime.strptime(row[1], '%Y-%m-%d').strftime('%m/%d')
-                            c.testing = dt +"|{:,.0f}".format(int(row[5])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.2f}".format(float(row[7])) + "/K)"
+                            dt = datetime.datetime.strptime(row[2], '%Y-%m-%d').strftime('%m/%d')
+                            c.testing = dt +"|{:,.0f}".format(int(row[6])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.2f}".format(float(row[8])) + "/K)"
                             break
             return c
         else:
@@ -307,7 +307,7 @@ class Countries:
                                     "South Africa", "Egypt", "Algeria",
                                     "Cameroon", "Cote d'Ivoire"],
                         "Americas":[ "Mexico","Honduras", "Cuba", "Costa Rica",
-                                    "Haiti", "Dominican Republic","Guatemala","Canada","Jamaica"],
+                                    "Haiti", "Dominican Republic","Guatemala","Canada","Jamaica","US"],
                         "Other": [ "Russia", "New Zealand","Australia","Guam","Greenland","Reunion","Kazakhstan","Seychelles","Belarus"]
                         }
         try:
@@ -316,7 +316,7 @@ class Countries:
         except FileNotFoundError:
             mycountries = [ "Chile","Argentina","Miami-Dade, Florida", "US",
                             "Spain", "Italy", "United Kingdom", "Netherlands",
-                            "New York"]
+                            "New York", "Florida"]
             with open('myCache/My_List.txt',  'wb') as fp:
                 pickle.dump(mycountries, fp)
         self.regions["My List"] = mycountries

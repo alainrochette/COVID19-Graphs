@@ -1,4 +1,5 @@
 from Country import Country, Countries
+from Prediction import Prediction
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.widgets import TextBox, RadioButtons, Button
@@ -10,6 +11,11 @@ from scipy.ndimage.filters import gaussian_filter1d
 import textwrap
 from datetime import datetime
 import pickle
+import scipy
+from scipy.integrate import odeint
+from scipy import optimize, stats
+import numpy as np
+
 # plt.rc('text', usetex=True)
 
 #[]   +    =     {}
@@ -32,6 +38,7 @@ class Graph():
         self.scale = 1
         self.limit = 12
         self.ylim = None
+        self.xlim = None
         self.showAll= False
         self.selectedC  = None
         self.clickedG = None
@@ -39,7 +46,9 @@ class Graph():
         self.infoBox = None
         self.inputWidget = None
         self.removeWidget = None
+        self.predictWidget = None
         self.removeBox = None
+        self.predictBox = None
         self.addToListBox = None
         self.addToListWidget = None
         self.startBox = None
@@ -51,6 +60,8 @@ class Graph():
         self.confirmText= None
         self.inInput = False
         self.graphs = None
+
+        # self.derivFunc = self.deriv
         self.countries = []
         self.graphLines ={}
         self.axGraphs ={}
@@ -61,6 +72,10 @@ class Graph():
         self.lastUpdated = lastUpdated
         self.dayBefore = -1
         self.graphDateLine = {}
+        self.predictLine= None
+        self.S0 = None
+        self.I0 = None
+        self.R0 = None
         self.setParams()
 
     def load(self,region, days_since=0):
@@ -86,6 +101,43 @@ class Graph():
                         }
         mpl.rcParams.update(self.params)
 
+    def predict(self,event):
+        c = self.selectedC
+        pred = Prediction(c, self.clickedG)
+        y_train_pred=pred.fitted
+
+        # fig = plt.figure("New",figsize=(15,7))
+        # ax = fig.add_subplot(111)
+        ax = self.graphsAx[self.clickedG]
+        newy = y_train_pred
+        if "death" in self.clickedG:
+            newy = [y * sum(c.deaths) for y in newy]
+        else:
+            newy = [y * sum(c.cases) for y in newy]
+        # ax.plot(pred.xdata, pred.ydata, color="black", linewidth=1, label='train')
+        if self.predictLine:
+            self.predictLine[0].remove()
+            del self.predictLine[0]
+        self.predictLine = ax.plot(pred.newxdata, newy[:len(pred.newxdata)], color="black", linewidth=1, label='model')
+        ax.set_xlim(right=len(c.x)+len(pred.newxdata))
+        ax.relim()
+        plt.show()
+
+    def sir_model(self, y, x, beta, gamma):
+        S = -beta * y[0] * y[1] / (self.selectedC.pop*1000000)
+        R = gamma * y[1]
+        I = -(S + R)
+        return S, I, R
+
+    def fit_odeint(self,x, beta, gamma):
+        return odeint(self.sir_model, (self.S0, self.I0, self.R0), x, args=(beta, gamma))[:,1]
+
+    def skewnorm(self,x, sigmag, mu, alpha, c,a):
+
+        normpdf = (1/(sigmag*np.sqrt(2*math.pi)))*np.exp(-(np.power((x-mu),2)/(2*np.power(sigmag,2))))
+
+        normcdf = (0.5*(1+sp.erf((alpha*((x-mu)/sigmag))/(np.sqrt(2)))))
+        return 2*a*normpdf*normcdf + c
 
     def growthFactor(self,c,type):
         L = getattr(c, type)
@@ -123,6 +175,7 @@ class Graph():
                     c.newdeathsPerM = [x/c.pop for x in c.newdeaths]
                     c.casesGF = self.growthFactor(c,"cases")
                     c.deathsGF = self.growthFactor(c,"deaths")
+                    c.avgcasesGF = [self.averageGrowthFactor(c,"cases")]
         elif not c.newcasesPerM:
             c.newcasesPerM = [x/c.pop for x in c.newcases]
             c.casesPerM = [x/c.pop for x in c.cases]
@@ -130,6 +183,7 @@ class Graph():
             c.newdeathsPerM = [x/c.pop for x in c.newdeaths]
             c.casesGF = self.growthFactor(c,"cases")
             c.deathsGF = self.growthFactor(c,"deaths")
+            c.avgcasesGF = [self.averageGrowthFactor(c,"cases")]
 
     def addToList(self,event):
         selected = self.selectedC
@@ -175,6 +229,7 @@ class Graph():
                     minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
                     minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
                     ax.set_xlim(left=minx)
+                    self.xlim = minx, len(c.x)
 
                     if self.firstAdd:
                         if self.All.days_since==0 or "/" in str(self.All.days_since):
@@ -182,16 +237,18 @@ class Graph():
                             if not "Big" in g: ax.set_xticks(self.All.dates[::4])
 
                 if self.removeBox: self.removeBox.set_visible(False)
+                if self.predictBox: self.predictBox.set_visible(False)
                 if self.addToListBox: self.addToListBox.set_visible(False)
                 if self.infoBox: self.infoBox.set_visible(False)
                 self.firstAdd = False
                 self.infoWidget = None
                 self.removeWidget = None
+                self.predictWidget = None
                 self.addToListWidget = None
                 self.inputWidget.set_val("")
                 if not loading: self.select(self.selectedC.name)
             if loading: self.selectedC = None
-            self.inInput = False
+            # self.inInput = False
             self.draw()
 
 
@@ -215,6 +272,7 @@ class Graph():
         self.select(None)
         self.infoWidget = None
         self.removeWidget = None
+        self.predictWidget = None
         self.addToListWidget = None
 
     def draw(self):
@@ -330,12 +388,19 @@ class Graph():
                                    transform=self.infoBox.transAxes, clip_on=False)
         self.infoBox.add_patch(fancybox)
 
-        if not self.removeWidget:
+        if not self.removeWidget and not self.predictWidget:
             if self.removeBox: self.removeBox.remove()
+            if self.predictBox: self.predictBox.remove()
             self.removeBox = plt.axes([0.235, startheight+height-0.055, 0.04, 0.055])
             self.removeWidget = Button(self.removeBox, 'Remove',color="whitesmoke" ,hovercolor="lightgray")
             self.removeWidget.label.set_fontsize(7)
             self.removeWidget.on_clicked(self.remove)
+
+            # self.predictBox = plt.axes([0.235, startheight+height-3*0.055 - 0.02, 0.04, 0.055])
+            # self.predictWidget = Button(self.predictBox, 'Predict',color="whitesmoke" ,hovercolor="lightgray")
+            # self.predictWidget.label.set_fontsize(7)
+            # self.predictWidget.on_clicked(self.predict)
+
             if self.All.region != "My List":
                 if self.addToListBox: self.addToListBox.remove()
                 self.addToListBox = plt.axes([0.235, startheight+height-0.12, 0.04, 0.055])
@@ -344,6 +409,7 @@ class Graph():
                 self.addToListWidget.on_clicked(self.addToList)
         if self.addToListBox: self.addToListBox.set_visible(True)
         self.removeBox.set_visible(True)
+        # self.predictBox.set_visible(True)
         self.infoBox.set_visible(True)
         if self.clickedG and not "Big" in self.clickedG: plt.figure("All Graphs")
 
@@ -374,11 +440,16 @@ class Graph():
             self.dayBefore = -1
             self.toggleSettings(False)
         if self.removeBox: self.removeBox.set_visible(False)
+        if self.predictBox: self.predictBox.set_visible(False)
         if self.addToListBox: self.addToListBox.set_visible(False)
+        if self.predictLine:
+            self.predictLine[0].remove()
+            del self.predictLine[0]
+            self.predictLine = None
         if self.infoBox and self.infoWidget:
             self.infoBox.set_visible(False)
             self.infoWidget.set_val("")
-
+        if "Big" in self.clickedG: self.graphsAx[self.clickedG].set_xlim(self.xlim)
         for graph in self.graphs:
             labels = self.graphsLabels[graph]
             for lname in labels:
@@ -473,6 +544,7 @@ class Graph():
         if self.fig: plt.close('all')
         self.infoWidget = None
         self.removeWidget = None
+        self.predictWidget = None
         self.addToListWidget = None
         self.firstAdd  = True
         for g in self.graphs:
@@ -562,7 +634,7 @@ class Graph():
                 radio = RadioButtons(rax, ('My List', 'States', 'Europe', 'Asia', 'Africa','South America', 'Americas','Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
 
-        self.order("casesPerM")
+        self.order("avgcasesGF")
         count=0
         selected = self.selectedC
         for c in self.countries:
