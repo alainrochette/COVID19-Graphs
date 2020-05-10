@@ -231,7 +231,7 @@ class Countries:
                         place.lower()  ==  row[6].lower()):
                         totalpop = totalpop + int(float(row[11]))
                         if deathCount > 0:
-                            c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(float(x)) for x in row[12:][0:len(c.dates)] if x != ""])]
+                                c.alldeaths =  [x + y for x, y in zip(c.alldeaths , [int(float(x)) for x in row[12:][0:len(c.dates)] if x != ""])]
                         else:
                             c.alldeaths = [int(float(x)) for x in row[12:][0:len(c.dates)] if x != ""]
                         deathCount += 1
