@@ -231,6 +231,7 @@ class Graph():
                         gy =getattr(c,g.replace("Big",""))[0:len(gx)]
                         if len(gy) < len(gx): gx = gx[0:len(gy)]
                         ysigma = 1.1
+                        # ysigma = 0.5
                         if "newactive" in g: ysigma = 2.5
                         ysmoothed = gaussian_filter1d(gy, sigma=ysigma)
 
