@@ -281,7 +281,8 @@ class Countries:
         setattr(c,"new"+type,new)
 
     def loadRegion(self):
-        self.regions  = {"South America": [ "Chile", "Argentina", "Colombia",
+        self.regions  = {"All":[],
+                        "South America": [ "Chile", "Argentina", "Colombia",
                                         "Uruguay", "Paraguay", "Venezuela",
                                         "Peru", "Bolivia", "Ecuador", "Brazil", "Panama"],
                         "Europe":["Germany", "Italy", "Spain", "United Kingdom",
@@ -310,10 +311,17 @@ class Countries:
                                     "Haiti", "Dominican Republic","Guatemala","Canada","Jamaica","US"],
                         "Other": [ "Russia", "New Zealand","Australia","Guam","Greenland","Reunion","Kazakhstan","Seychelles","Belarus"]
                         }
+        for r in self.regions:
+            if r != "States" and r!= "All":
+                for c in self.regions[r]:
+                    self.regions["All"].append(c)
+
         try:
             with open('myCache/My_List.txt',  'rb') as fp:
                 mycountries = list(set(pickle.load(fp)))
         except FileNotFoundError:
+            # mycountries = [ "Chile","Brazil", "US",
+            #                 "Russia", "United Kingdom", ]
             mycountries = [ "Chile","Argentina","Miami-Dade, Florida", "US",
                             "Spain", "Italy", "United Kingdom", "Netherlands",
                             "New York", "Florida"]

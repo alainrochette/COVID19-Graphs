@@ -60,8 +60,9 @@ class Graph():
         self.confirmText= None
         self.inInput = False
         self.graphs = None
-
+        self.region = None
         # self.derivFunc = self.deriv
+        self.sortBy = "newcasesPerM"
         self.countries = []
         self.firstAdd ={}
         self.graphLines ={}
@@ -81,6 +82,7 @@ class Graph():
         self.setParams()
 
     def load(self,region, days_since=0):
+        self.region = region
         self.limit  = 120 if region == "My List" else 12
         country_colors =  self.All.country_colors if self.All else None
         self.All = Countries(region,days_since,colors=country_colors)
@@ -179,6 +181,7 @@ class Graph():
                     c.casesGF = self.growthFactor(c,"cases")
                     c.deathsGF = self.growthFactor(c,"deaths")
                     c.avgcasesGF = [self.averageGrowthFactor(c,"cases")]
+                    c.avgdeathsGF = [self.averageGrowthFactor(c,"deaths")]
                     c.active = [x - y for x,y in zip(c.cases, c.deaths)]
                     if len(c.allrecovered) != 1: c.active = [x - y for x,y in zip(c.active, c.allrecovered)]
                     c.activePerM = [x/c.pop for x in c.active]
@@ -192,6 +195,7 @@ class Graph():
             c.casesGF = self.growthFactor(c,"cases")
             c.deathsGF = self.growthFactor(c,"deaths")
             c.avgcasesGF = [self.averageGrowthFactor(c,"cases")]
+            c.avgdeathsGF = [self.averageGrowthFactor(c,"deaths")]
             c.active = [x - y for x,y in zip(c.cases, c.deaths)]
             if len(c.allrecovered) != 1: c.active = [x - y for x,y in zip(c.active, c.allrecovered)]
             c.activePerM = [x/c.pop for x in c.active]
@@ -344,6 +348,18 @@ class Graph():
         plt.close('all')
         self.load(region)
 
+    def change_sortby(self,sortBy,selected=False):
+        if not selected: self.selectedC  = None
+        sortDict = {'Cases':"casesPerM", 'New Cases':"newcasesPerM",'Deaths':"deathsPerM",
+                    'New Deaths':"newdeathsPerM", 'Cases Growth':"avgcasesGF", 'Deaths Growth':"avgdeathsGF", "Active":"activePerM"}
+        self.big = sortDict[sortBy]
+        if "Growth" in sortBy:
+            self.big = "newcasesPerM" if "Cases" in sortBy else "newdeathsPerM"
+        self.sortBy = sortDict[sortBy]
+        plt.figure("Main")
+        plt.close('all')
+        self.load(self.region)
+
     def country_info(self,c):
         plt.figure("Main")
         plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
@@ -403,18 +419,16 @@ class Graph():
         height = 0.27
         startheight = min(0.62 - (max(7,len(self.graphsLabels[self.clickedG]))/32),0.5)
 
-        if self.infoWidget:
-            self.infoWidget.set_val("")
-            self.infoWidget.set_val(txt)
-        else:
-            if self.infoBox: self.infoBox.remove()
-            self.infoBox = plt.axes([0.065, startheight, 0.165, height])
-            self.infoBox.set_frame_on(False)
-            self.infoWidget = TextBox(self.infoBox, '', txt)
-        self.infoWidget.text_disp.set_color([0.3, 0.3, 0.3])
-        self.infoWidget.text_disp.set_size(8.2)
+        if self.infoBox: self.infoBox.remove()
+        self.infoBox = plt.axes([0.065, startheight, 0.165, height])
+        self.infoBox.axis('off')
+        self.infoBox.text(0.03,0.05,txt, color=[0.3,0.3,0.3], size = 8.2)
 
-        fancybox = mpatches.FancyBboxPatch((0,0), 1,1, edgecolor=c.color,
+
+
+        self.infoBox.set_frame_on(False)
+
+        fancybox = mpatches.FancyBboxPatch((0,0), 1,1,edgecolor=c.color,
                                    facecolor="white", boxstyle="round,pad=0",
                                    mutation_aspect=0.001,
                                    transform=self.infoBox.transAxes, clip_on=False)
@@ -478,9 +492,11 @@ class Graph():
             self.predictLine[0].remove()
             del self.predictLine[0]
             self.predictLine = None
-        if self.infoBox and self.infoWidget:
+        # if self.infoBox and self.infoWidget:
+        if self.infoBox:
             self.infoBox.set_visible(False)
-            self.infoWidget.set_val("")
+            self.infoBox.text(0,0,"")
+            # self.infoWidget.set_val("")
         if "Big" in self.clickedG: self.graphsAx[self.clickedG].set_xlim(self.xlim)
         for graph in self.graphs:
             labels = self.graphsLabels[graph]
@@ -668,12 +684,40 @@ class Graph():
                         verticalalignment='top', color ="darkgray")
 
 
-                active_region ={"My List":0, "States":1,"Europe":2,"Asia":3, "Africa":4,"South America":5, "Americas":6 ,"Other":7}
-                rax = plt.axes([0.222, 0.68, 0.12, 0.22], facecolor='white')
-                radio = RadioButtons(rax, ('My List', 'States', 'Europe', 'Asia', 'Africa','South America', 'Americas','Other'),active=active_region[self.All.region],activecolor='lightgray')
+
+
+                active_region ={"My List":0, "All":1,"States":2,"Europe":3,"Asia":4, "Africa":5,"South America":6, "Americas":7 ,"Other":8}
+                rax = plt.axes([0.222, 0.68, 0.12, 0.22], facecolor='None')
+                radio = RadioButtons(rax, ('My List', 'All','States', 'Europe', 'Asia', 'Africa','South America', 'Americas','Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
 
-        self.order("avgcasesGF")
+                regBox = plt.axes([0.222, 0.9, 0.12, 0.22], facecolor='None')
+                regBox.axis('off')
+                regBox.text(0,0,"Region:",color=[0.5,0.5,0.5],size=6)
+                regBox.set_frame_on(False)
+
+                sortBox = plt.axes([0.329, 0.9, 0.07, 0.14], facecolor='None')
+                sortBox.axis('off')
+                sortBox.set_frame_on(False)
+
+                if len(self.countries) > 12:
+                    raxSort = plt.axes([0.326, 0.74, 0.085, 0.16], facecolor='None')
+                    sortOptions={"casesPerM":0, "newcasesPerM":1,"deathsPerM":2,"newdeathsPerM":3,"avgcasesGF":4, "avgdeathsGF":5, "activePerM":6}
+                    radioSort = RadioButtons(raxSort, ('Cases', 'New Cases','Deaths', 'New Deaths', 'Cases Growth', 'Deaths Growth', 'Active'),active=sortOptions[self.sortBy],activecolor='lightgray')
+                    sortBox.text(0,0,"Sort By:",color=[0.5,0.5,0.5],size=6)
+                else:
+                    raxSort = plt.axes([0.323, 0.77, 0.07, 0.13], facecolor='None')
+                    sortOptions={"casesPerM":0, "newcasesPerM":1,"deathsPerM":2,"newdeathsPerM":3, "activePerM":4}
+                    if self.sortBy not in sortOptions:
+                        self.sortBy = "newcasesPerM"
+                    radioSort = RadioButtons(raxSort, ('Cases', 'New Cases','Deaths', 'New Deaths','Active'),active=sortOptions[self.sortBy],activecolor='lightgray')
+                    sortBox.text(0,0,"Show:",color=[0.5,0.5,0.5],size=6)
+                radioSort.on_clicked(self.change_sortby)
+                # if self.region != "All" and self.region != "Europe" and self.region != "Asia" and self.region!="States":
+                #     raxSort.set_visible(False)
+                #     sortBox.set_visible(False)
+
+        self.order(self.sortBy)
         count=0
         selected = self.selectedC
         for c in self.countries:
