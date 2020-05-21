@@ -582,6 +582,12 @@ class Graph():
     def toggleHelp(self,event):
         self.helpText.set_visible(not self.helpText.get_visible())
 
+    def toggleSort(self,event,turn=None):
+        if turn==False or turn==True:
+            self.raxSort.set_visible(turn)
+        else:
+            self.raxSort.set_visible(not self.raxSort.get_visible())
+
     def graph(self):
         plt.ion()
         self.prep()
@@ -696,23 +702,31 @@ class Graph():
                 regBox.text(0,0,"Region:",color=[0.5,0.5,0.5],size=6)
                 regBox.set_frame_on(False)
 
-                sortBox = plt.axes([0.329, 0.9, 0.07, 0.14], facecolor='None')
+                sortBox = plt.axes([0.222, 0.667, 0.065, 0.14], facecolor='None')
                 sortBox.axis('off')
                 sortBox.set_frame_on(False)
 
+
+
                 if len(self.countries) > 12:
-                    raxSort = plt.axes([0.326, 0.74, 0.085, 0.16], facecolor='None')
+                    self.raxSort = plt.axes([0.2275, 0.49, 0.085, 0.16], facecolor='None')
                     sortOptions={"casesPerM":0, "newcasesPerM":1,"deathsPerM":2,"newdeathsPerM":3,"avgcasesGF":4, "avgdeathsGF":5, "activePerM":6}
-                    radioSort = RadioButtons(raxSort, ('Cases', 'New Cases','Deaths', 'New Deaths', 'Cases Growth', 'Deaths Growth', 'Active'),active=sortOptions[self.sortBy],activecolor='lightgray')
-                    sortBox.text(0,0,"Sort By:",color=[0.5,0.5,0.5],size=6)
+                    radioSort = RadioButtons(self.raxSort, ('Cases', 'New Cases','Deaths', 'New Deaths', 'Cases Growth', 'Deaths Growth', 'Active'),active=sortOptions[self.sortBy],activecolor='lightgray')
+                    # sortBox.text(0,0,"Sort By:",color=[0.5,0.5,0.5],size=6)
+                    self.sortButton = Button(plt.axes([0.222, 0.65, 0.04, 0.025]), "Sort By:",color="whitesmoke" ,hovercolor="lightgray")
+                    self.sortButton.label.set_fontsize(7)
                 else:
-                    raxSort = plt.axes([0.323, 0.77, 0.07, 0.13], facecolor='None')
+                    self.raxSort = plt.axes([0.229, 0.52, 0.07, 0.13], facecolor='None')
                     sortOptions={"casesPerM":0, "newcasesPerM":1,"deathsPerM":2,"newdeathsPerM":3, "activePerM":4}
                     if self.sortBy not in sortOptions:
                         self.sortBy = "newcasesPerM"
-                    radioSort = RadioButtons(raxSort, ('Cases', 'New Cases','Deaths', 'New Deaths','Active'),active=sortOptions[self.sortBy],activecolor='lightgray')
-                    sortBox.text(0,0,"Show:",color=[0.5,0.5,0.5],size=6)
+                    radioSort = RadioButtons(self.raxSort, ('Cases', 'New Cases','Deaths', 'New Deaths','Active'),active=sortOptions[self.sortBy],activecolor='lightgray')
+                    # sortBox.text(0,0,"Show:",color=[0.5,0.5,0.5],size=6)
+                    self.sortButton = Button(plt.axes([0.222, 0.65, 0.04, 0.025]), "Show:",color="whitesmoke" ,hovercolor="lightgray")
+                    self.sortButton.label.set_fontsize(7)
                 radioSort.on_clicked(self.change_sortby)
+                self.sortButton.on_clicked(self.toggleSort)
+                self.raxSort.set_visible(False)
                 # if self.region != "All" and self.region != "Europe" and self.region != "Asia" and self.region!="States":
                 #     raxSort.set_visible(False)
                 #     sortBox.set_visible(False)
