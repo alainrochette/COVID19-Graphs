@@ -343,6 +343,7 @@ class Graph():
             pass
 
     def change_regions(self,region,selected=False):
+
         if not selected: self.selectedC  = None
         plt.figure("Main")
         plt.close('all')
@@ -702,11 +703,7 @@ class Graph():
                 regBox.text(0,0,"Region:",color=[0.5,0.5,0.5],size=6)
                 regBox.set_frame_on(False)
 
-                sortBox = plt.axes([0.222, 0.667, 0.065, 0.14], facecolor='None')
-                sortBox.axis('off')
-                sortBox.set_frame_on(False)
-
-
+            
 
                 if len(self.countries) > 12:
                     self.raxSort = plt.axes([0.2275, 0.49, 0.085, 0.16], facecolor='None')
