@@ -692,9 +692,9 @@ class Graph():
 
 
 
-                active_region ={"My List":0, "All":1,"States":2,"Europe":3,"Asia":4, "Africa":5,"South America":6, "Americas":7 ,"Other":8}
+                active_region ={"My List":0, "World":1,"States":2,"Europe":3,"Asia":4, "Africa":5,"South America":6, "Americas":7 ,"Other":8}
                 rax = plt.axes([0.222, 0.68, 0.12, 0.22], facecolor='None')
-                radio = RadioButtons(rax, ('My List', 'All','States', 'Europe', 'Asia', 'Africa','South America', 'Americas','Other'),active=active_region[self.All.region],activecolor='lightgray')
+                radio = RadioButtons(rax, ('My List', 'World','States', 'Europe', 'Asia', 'Africa','South America', 'Americas','Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
 
                 regBox = plt.axes([0.222, 0.9, 0.12, 0.22], facecolor='None')

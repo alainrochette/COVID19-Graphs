@@ -281,7 +281,7 @@ class Countries:
         setattr(c,"new"+type,new)
 
     def loadRegion(self):
-        self.regions  = {"All":[],
+        self.regions  = {"World":[],
                         "South America": [ "Chile", "Argentina", "Colombia",
                                         "Uruguay", "Paraguay", "Venezuela",
                                         "Peru", "Bolivia", "Ecuador", "Brazil", "Panama"],
@@ -312,9 +312,9 @@ class Countries:
                         "Other": [ "Russia", "New Zealand","Australia","Guam","Greenland","Reunion","Kazakhstan","Seychelles","Belarus"]
                         }
         for r in self.regions:
-            if r != "States" and r!= "All":
+            if r != "States" and r!= "World":
                 for c in self.regions[r]:
-                    self.regions["All"].append(c)
+                    self.regions["World"].append(c)
 
         try:
             with open('myCache/My_List.txt',  'rb') as fp:
