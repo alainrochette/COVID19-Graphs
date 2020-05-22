@@ -291,18 +291,19 @@ class Graph():
         self.All.hide(self.selectedC.name)
         self.countries.remove(self.selectedC)
         for graph in self.graphs:
-            line = self.graphLines[graph][self.selectedC.name][0]
-            line.remove()
-            del line
-            ax = self.graphsAx[graph]
-            ax.relim()
-            ax.autoscale_view()
-            minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
-            minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
-            ax.set_xlim(left=minx)
-            ind = self.graphsLabels[graph].index(self.selectedC.name)
-            self.graphsHandles[graph].remove(self.graphsHandles[graph][ind])
-            self.graphsLabels[graph].remove(self.selectedC.name)
+            if self.selectedC.name in self.graphLines[graph]:
+                line = self.graphLines[graph][self.selectedC.name][0]
+                line.remove()
+                del line
+                ax = self.graphsAx[graph]
+                ax.relim()
+                ax.autoscale_view()
+                minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
+                minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
+                ax.set_xlim(left=minx)
+                ind = self.graphsLabels[graph].index(self.selectedC.name)
+                self.graphsHandles[graph].remove(self.graphsHandles[graph][ind])
+                self.graphsLabels[graph].remove(self.selectedC.name)
         self.select(None)
         self.infoWidget = None
         self.removeWidget = None

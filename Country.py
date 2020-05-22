@@ -323,8 +323,7 @@ class Countries:
             # mycountries = [ "Chile","Brazil", "US",
             #                 "Russia", "United Kingdom", ]
             mycountries = [ "Chile","Argentina","Miami-Dade, Florida", "US",
-                            "Spain", "Italy", "United Kingdom", "Netherlands",
-                            "New York", "Florida"]
+                            "Spain", "Italy", "United Kingdom", "Netherlands", "Florida"]
             with open('myCache/My_List.txt',  'wb') as fp:
                 pickle.dump(mycountries, fp)
         self.regions["My List"] = mycountries
