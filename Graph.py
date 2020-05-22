@@ -149,8 +149,14 @@ class Graph():
         return gf
 
     def averageGrowthFactor(self,c, type):
-        gf = c.casesGF if type == "cases" else c.deathsGF
-        return sum(gf[-7 + self.dayBefore + 1:len(gf) + self.dayBefore + 1])/7
+        # gf = c.casesGF if type == "cases" else c.deathsGF
+        gf = c.newcasesPerM if type == "cases" else c.newdeathsPerM
+        a = gf[-7 + self.dayBefore + 1]
+        b = gf[len(gf) + self.dayBefore]
+
+        if a == 0: a = 0.5
+        if b == 0: b = 0.5
+        return (b/a)**(1/float(7))
 
     def showL(self,c,data):
     	return [i*c.vis for i in data]
@@ -703,7 +709,7 @@ class Graph():
                 regBox.text(0,0,"Region:",color=[0.5,0.5,0.5],size=6)
                 regBox.set_frame_on(False)
 
-            
+
 
                 if len(self.countries) > 12:
                     self.raxSort = plt.axes([0.2275, 0.49, 0.085, 0.16], facecolor='None')
