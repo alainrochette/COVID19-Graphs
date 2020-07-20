@@ -15,6 +15,7 @@ import scipy
 from scipy.integrate import odeint
 from scipy import optimize, stats
 import numpy as np
+import random
 
 # plt.rc('text', usetex=True)
 
@@ -47,8 +48,10 @@ class Graph():
         self.inputWidget = None
         self.removeWidget = None
         self.predictWidget = None
+        self.colorWidget = None
         self.removeBox = None
         self.predictBox = None
+        self.colorBox = None
         self.addToListBox = None
         self.addToListWidget = None
         self.startBox = None
@@ -104,6 +107,24 @@ class Graph():
                         'axes.grid' : True, 'axes.grid.axis' : "y", 'grid.color' : "0.95",
                         }
         mpl.rcParams.update(self.params)
+
+    def changeColor(self,event):
+        if event and self.selectedC:
+            selected = self.selectedC.name
+            found = False
+            for graph in self.graphs:
+                labels = self.graphsLabels[graph]
+                for lname in labels:
+                    c =  self.All.get(lname)
+                    if c and lname == selected:
+                        line = self.graphLines[graph][lname][0]
+                        if not found: c.color = [random.random(),random.random(),random.random()]
+                        if not found: c.lightcolor = [x + (1 - x) * 0.9 for x in c.color ]
+                        line.set_color(c.color)
+                        found = True
+                        break
+            self.country_info(self.selectedC)
+            self.draw()
 
     def predict(self,event):
         c = self.selectedC
@@ -243,9 +264,10 @@ class Graph():
                         ysigma = 1.1
                         # ysigma = 0.5
                         if "newactive" in g: ysigma = 2.5
+                        if "death" in g: ysigma = 2
                         ysmoothed = gaussian_filter1d(gy, sigma=ysigma)
-
-                        self.graphLines[g][c.name]= ax.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name)
+                        lw =1.7
+                        self.graphLines[g][c.name]= ax.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name,linewidth=lw)
                         if not self.y0Line[g] and "newactive" in g: self.y0Line[g] = ax.axhline(0, color='black', linestyle='--', linewidth=1)
 
                         ax.relim()
@@ -271,6 +293,7 @@ class Graph():
                     if added: self.firstAdd[g] = False
                 if self.removeBox: self.removeBox.set_visible(False)
                 if self.predictBox: self.predictBox.set_visible(False)
+                if self.colorBox: self.colorBox.set_visible(False)
                 if self.addToListBox: self.addToListBox.set_visible(False)
                 if self.infoBox: self.infoBox.set_visible(False)
 
@@ -278,6 +301,7 @@ class Graph():
                 self.infoWidget = None
                 self.removeWidget = None
                 self.predictWidget = None
+                self.colorWidget = None
                 self.addToListWidget = None
                 self.inputWidget.set_val("")
                 if not loading: self.select(self.selectedC.name)
@@ -308,6 +332,7 @@ class Graph():
         self.infoWidget = None
         self.removeWidget = None
         self.predictWidget = None
+        self.colorWidget = None
         self.addToListWidget = None
 
     def draw(self):
@@ -442,13 +467,19 @@ class Graph():
                                    transform=self.infoBox.transAxes, clip_on=False)
         self.infoBox.add_patch(fancybox)
 
-        if not self.removeWidget and not self.predictWidget:
+        if not self.removeWidget and not self.predictWidget and not self.colorWidget:
             if self.removeBox: self.removeBox.remove()
             if self.predictBox: self.predictBox.remove()
+            if self.colorBox: self.colorBox.remove()
             self.removeBox = plt.axes([0.235, startheight+height-0.055, 0.04, 0.055])
             self.removeWidget = Button(self.removeBox, 'Remove',color="whitesmoke" ,hovercolor="lightgray")
             self.removeWidget.label.set_fontsize(7)
             self.removeWidget.on_clicked(self.remove)
+
+            self.colorBox = plt.axes([0.235, startheight+height-3*0.055 - 0.02, 0.04, 0.055])
+            self.colorWidget = Button(self.colorBox, 'Change\nColor',color="whitesmoke" ,hovercolor="lightgray")
+            self.colorWidget.label.set_fontsize(7)
+            self.colorWidget.on_clicked(self.changeColor)
 
             # self.predictBox = plt.axes([0.235, startheight+height-3*0.055 - 0.02, 0.04, 0.055])
             # self.predictWidget = Button(self.predictBox, 'Predict',color="whitesmoke" ,hovercolor="lightgray")
@@ -463,6 +494,7 @@ class Graph():
                 self.addToListWidget.on_clicked(self.addToList)
         if self.addToListBox: self.addToListBox.set_visible(True)
         self.removeBox.set_visible(True)
+        self.colorBox.set_visible(True)
         # self.predictBox.set_visible(True)
         self.infoBox.set_visible(True)
         if self.clickedG and not "Big" in self.clickedG: plt.figure("All Graphs")
@@ -495,6 +527,7 @@ class Graph():
             self.toggleSettings(False)
         if self.removeBox: self.removeBox.set_visible(False)
         if self.predictBox: self.predictBox.set_visible(False)
+        if self.colorBox: self.colorBox.set_visible(False)
         if self.addToListBox: self.addToListBox.set_visible(False)
         if self.predictLine:
             self.predictLine[0].remove()
@@ -512,10 +545,15 @@ class Graph():
                 c =  self.All.get(lname)
                 if c:
                     line =self.graphLines[graph][lname][0]
+
                     if lname == selected or not selected:
-                        line.set_color(c.defcolor)
+                        line.set_color(c.color)
+                        if selected: line.set_linewidth(2.2)
+
                         if selected: self.selectedC = c
+                        if not selected: line.set_linewidth(1.7)
                     else:
+                        line.set_linewidth(1.7)
                         line.set_color(c.lightcolor)
 
         if self.selectedC: self.country_info(self.selectedC)
@@ -607,6 +645,7 @@ class Graph():
         self.infoWidget = None
         self.removeWidget = None
         self.predictWidget = None
+        self.colorBox = None
         self.addToListWidget = None
 
         for g in self.graphs:
@@ -736,12 +775,9 @@ class Graph():
                 #     sortBox.set_visible(False)
 
         self.order(self.sortBy)
-        count=0
         selected = self.selectedC
-        for c in list(reversed(self.countries)):
-            if count < self.limit: self.add(c.name, loading=True)
-            if count >= self.limit: self.countries.remove(c)
-            count += 1
+        for c in list(reversed(self.countries[:self.limit])): self.add(c.name, loading=True)
+        for c in self.countries[self.limit:]: self.countries.remove(c)
         if selected: self.select(selected.name)
         plt.ioff()
         plt.show()
