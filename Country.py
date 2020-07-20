@@ -3,6 +3,7 @@ import random
 import pickle
 import datetime
 import glob
+from matplotlib import colors
 
 # Check https://matplotlib.org/3.1.0/gallery/color/named_colors.html for Named Colors
 country_colors ={"France":"cornflowerblue", "Ecuador":"cornflowerblue","Honduras":"cornflowerblue","Morocco":"cornflowerblue",
@@ -29,26 +30,26 @@ country_colors ={"France":"cornflowerblue", "Ecuador":"cornflowerblue","Honduras
                 "Canada":(32/255,120/255,187/255),
                 "World":"black"}
 light_colors={"cornflowerblue": (200/255,220/255,255/255),
-                "darkkhaki":"beige",
+                "darkkhaki":colors.to_rgba("beige"),
                 "turquoise": (190/255,255/255,255/255),
-                "dimgray": "lightgray",
+                "dimgray": colors.to_rgba("lightgray"),
                 "skyblue":(230/255,245/255,255/255),
                 "deepskyblue":(215/255,235/255,255/255),
                 "steelblue":(215/255,230/255,255/255),
                 "darkorchid":(240/255,220/255,255/255),
-                "gold":"cornsilk",
+                "gold":colors.to_rgba("cornsilk"),
                 "limegreen":(210/255,245/255,210/255),
                 "forestgreen": (195/255,230/255,195/255),
-                "orange": "moccasin",
-                "orchid": "lavender",
+                "orange": colors.to_rgba("moccasin"),
+                "orchid": colors.to_rgba("lavender"),
                 "grey": (230/255,230/255,230/255),
-                "slategrey": "gainsboro",
-                "hotpink": "lavenderblush",
-                "darkgoldenrod": "wheat",
-                "goldenrod": "papayawhip",
-                "orangered":"mistyrose",
-                "peru": "wheat",
-                "crimson":"pink"
+                "slategrey": colors.to_rgba("gainsboro"),
+                "hotpink": colors.to_rgba("lavenderblush"),
+                "darkgoldenrod": colors.to_rgba("wheat"),
+                "goldenrod": colors.to_rgba("papayawhip"),
+                "orangered":colors.to_rgba("mistyrose"),
+                "peru": colors.to_rgba("wheat"),
+                "crimson":colors.to_rgba("pink")
                 }
 
 populationD ={"World":7800}
@@ -175,10 +176,15 @@ class Countries:
                     line_count = 0
                     for row in reversed(list(csv_reader)):
                         n =  row[0].lower().split(" - ")[0].replace("south korea", "korea, south")
-                        if ("CDC" not in row[0]) and ((name.lower() ==n) or (name=="US" and n =="united states")) :
-                            dt = datetime.datetime.strptime(row[2], '%Y-%m-%d').strftime('%m/%d')
-                            c.testing = dt +"|{:,.0f}".format(int(row[6])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.2f}".format(float(row[8])) + "/K)"
-                            break
+                        try:
+                            a = int(row[6])
+                        except ValueError:
+                            pass
+                        else:
+                            if ("CDC" not in row[0]) and ((name.lower() ==n) or (name=="US" and n =="united states")):
+                                dt = datetime.datetime.strptime(row[2], '%Y-%m-%d').strftime('%m/%d')
+                                c.testing = dt +"|{:,.0f}".format(int(row[6])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.2f}".format(float(row[8])) + "/K)"
+                                break
             return c
         else:
             return self.addState(name)
@@ -338,7 +344,7 @@ class Country:
         self.vis = 0
         self.color= color
         self.defcolor= color
-        self.lightcolor = light_colors[color] if isinstance(color, str) else [x + (1 - x) * 0.8 for x in color]
+        self.lightcolor = [x + (1 - x) * 0.35 for x in light_colors[color]] if isinstance(color, str) else [x + (1 - x) * 0.9 for x in color]
         self.dates = []
         self.newcases = []
         self.newcasesPerM = []

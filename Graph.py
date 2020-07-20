@@ -265,8 +265,8 @@ class Graph():
 
                     if added and self.firstAdd[g]:
                         if self.All.days_since==0 or "/" in str(self.All.days_since):
-                            if "Big" in g: ax.set_xticks(self.All.dates[::2])
-                            if not "Big" in g: ax.set_xticks(self.All.dates[::4])
+                            if "Big" in g: ax.set_xticks(self.All.dates[::3])
+                            if not "Big" in g: ax.set_xticks(self.All.dates[::6])
 
                     if added: self.firstAdd[g] = False
                 if self.removeBox: self.removeBox.set_visible(False)
@@ -738,7 +738,7 @@ class Graph():
         self.order(self.sortBy)
         count=0
         selected = self.selectedC
-        for c in self.countries:
+        for c in list(reversed(self.countries)):
             if count < self.limit: self.add(c.name, loading=True)
             if count >= self.limit: self.countries.remove(c)
             count += 1
