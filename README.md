@@ -9,7 +9,7 @@ ___
 ### Instructions:
 
 * Run: `python3 main.py [--install]`
-  * `--install` : Install scipy, matplotlib, and git (One time only)
+  * `--install` : (One time only) Install scipy, matplotlib, and git
  
 * Graphs:
   * **Add Any Place:** (Country, US City, US State)
