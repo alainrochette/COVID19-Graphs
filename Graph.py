@@ -548,7 +548,7 @@ class Graph():
 
                     if lname == selected or not selected:
                         line.set_color(c.color)
-                        if selected: line.set_linewidth(2.2)
+                        if selected: line.set_linewidth(2.6)
 
                         if selected: self.selectedC = c
                         if not selected: line.set_linewidth(1.7)

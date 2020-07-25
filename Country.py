@@ -183,7 +183,10 @@ class Countries:
                         else:
                             if ("CDC" not in row[0]) and ((name.lower() ==n) or (name=="US" and n =="united states")):
                                 dt = datetime.datetime.strptime(row[2], '%Y-%m-%d').strftime('%m/%d')
-                                c.testing = dt +"|{:,.0f}".format(int(row[6])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.2f}".format(float(row[8])) + "/K)"
+                                try:
+                                    c.testing = dt +"|{:,.0f}".format(int(row[6])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.2f}".format(float(row[8])) + "/K)"
+                                except ValueError:
+                                    pass
                                 break
             return c
         else:
