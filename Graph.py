@@ -287,8 +287,9 @@ class Graph():
 
                     if added and self.firstAdd[g]:
                         if self.All.days_since==0 or "/" in str(self.All.days_since):
-                            if "Big" in g: ax.set_xticks(self.All.dates[::3])
-                            if not "Big" in g: ax.set_xticks(self.All.dates[::6])
+                            interval = int(len(self.All.dates)/45)
+                            if "Big" in g: ax.set_xticks(self.All.dates[::interval])
+                            if not "Big" in g: ax.set_xticks(self.All.dates[::interval*2])
 
                     if added: self.firstAdd[g] = False
                 if self.removeBox: self.removeBox.set_visible(False)
@@ -407,24 +408,27 @@ class Graph():
 
         cases = "{:,.0f}".format(c.cases[self.dayBefore])
         casesPerM = "({:,.0f}/M)".format(c.casesPerM[self.dayBefore])
+        oneincases =   "-" if c.cases[self.dayBefore] == 0 else  "(1 in {:,.0f})".format(int(1000000*c.pop/c.cases[self.dayBefore]))
         newcases = "{:,.0f}".format(c.newcases[self.dayBefore])
         casesGF = "({:3.2f} GF)".format(self.averageGrowthFactor(c, "cases"))
 
         deaths = "{:,.0f}".format(c.deaths[self.dayBefore])
         deathsPerM = "({:,.0f}/M)".format(c.deathsPerM[self.dayBefore])
+        oneindeaths = "no deaths :)" if c.deaths[self.dayBefore] == 0 else "(1 in {:,.0f})".format(int(1000000*c.pop/c.deaths[self.dayBefore]))
         newdeaths  = "{:,.0f}".format(c.newdeaths[self.dayBefore])
         deathsGF = "({:3.2f} GF)".format(self.averageGrowthFactor(c, "deaths"))
 
         MR =" {:,.1f}%".format(100*c.alldeaths[self.dayBefore]/c.cases[self.dayBefore])
-        txt +='\n  ' + r"$\bf{}$:  {:<10}{:>10}".format("Cases", cases,casesPerM)
+        txt +='\n  ' + r"$\bf{}$:  {:<10}{:>10}".format("Cases", cases,oneincases)
         txt +='\n' + "{}:  {:<11}{:>10}".format("      New", newcases,casesGF)
-        txt +='\n' + r"$\bf{}$:  {:<12}{:>10}".format("Deaths", deaths, deathsPerM)
+        txt +='\n' + r"$\bf{}$:  {:<12}{:>10}".format("Deaths", deaths, oneindeaths)
         txt +='\n' + "{}:  {:<12}{:>10}".format("      New", newdeaths,deathsGF)
         txt +='\n' + "{}: {:<10}".format("        MR", MR)
 
         if c.allrecovered !=  ["?"]:
             if len(c.allrecovered) > 1:
                 allRec = "{:,.0f}".format(c.allrecovered[self.dayBefore])
+
                 recoveredRate = "({:,.1f}%)".format(100*c.allrecovered[self.dayBefore]/(c.cases[self.dayBefore]))
                 lastDate = ""
             else:
@@ -437,8 +441,10 @@ class Graph():
 
         active = "{:,.0f}".format(c.active[self.dayBefore])
         activePerM = "({:,.0f}/M)".format(c.activePerM[self.dayBefore])
+
+        oneinactive =  "-" if c.active[self.dayBefore] == 0 else "(1 in {:,.0f})".format(int(1000000*c.pop/c.active[self.dayBefore]))
         newactive = "{:,.0f}".format(c.newactive[self.dayBefore])
-        txt +='\n  ' + r"$\bf{}$:  {:<10}{:>10}".format("Active", active,activePerM)
+        txt +='\n  ' + r"$\bf{}$:  {:<10}{:>10}".format("Active", active,oneinactive)
         txt +='\n' + "{}:  {:<11}".format("      New", newactive)
         if c.testing == "" or (c.testing != "" and len(c.testing.split("|")[1]) < 33): txt +="\n"
         if c.testing != "":

@@ -182,9 +182,9 @@ class Countries:
                             pass
                         else:
                             if ("CDC" not in row[0]) and ((name.lower() ==n) or (name=="US" and n =="united states")):
-                                dt = datetime.datetime.strptime(row[2], '%Y-%m-%d').strftime('%m/%d')
+                                dt = datetime.datetime.strptime(row[1], '%Y-%m-%d').strftime('%m/%d')
                                 try:
-                                    c.testing = dt +"|{:,.0f}".format(int(row[6])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.2f}".format(float(row[8])) + "/K)"
+                                    c.testing = dt +"|{:,.0f}".format(int(row[7])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.1f}".format(int(float(row[8]))/10) + "%)"
                                 except ValueError:
                                     pass
                                 break
@@ -257,7 +257,7 @@ class Countries:
                     for row in csv_reader:
                         if place.lower() == row[0].lower() and row[11] != "" :
                             dt = datetime.datetime.strptime(newest.split("/")[1].split(".")[0],'%m-%d-%Y').strftime('%m/%d')
-                            c.testing = dt +"|{:,.0f}".format(int(float(row[11]))) + " people tested ("+ "{:,.2f}".format(int(float(row[11]))/(c.pop*1000)) + "/K)"
+                            c.testing = dt +"|{:,.0f}".format(int(float(row[11]))) + " people tested ("+ "{:,.1f}".format(int(float(row[11]))/(c.pop*10000)) + "%)"
                             c.allrecovered = [int(row[7])] if row[7].isdigit() else ["?"]
                             break
             return c
