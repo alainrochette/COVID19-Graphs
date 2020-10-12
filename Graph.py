@@ -16,6 +16,8 @@ from scipy.integrate import odeint
 from scipy import optimize, stats
 import numpy as np
 import random
+import PyQt5
+from PyQt5.QtWidgets import *
 
 # plt.rc('text', usetex=True)
 
@@ -27,6 +29,7 @@ caseWord = {0: "Jan 22", 1:"first case", 2:"second case", 3:"third case"}
 SMALL_SIZE = 7
 MEDIUM_SIZE = 8
 BIGGER_SIZE = 10
+STARTDAYS = 35
 
 
 
@@ -267,7 +270,9 @@ class Graph():
                         if "death" in g: ysigma = 2
                         ysmoothed = gaussian_filter1d(gy, sigma=ysigma)
                         lw =1.7
-                        self.graphLines[g][c.name]= ax.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name,linewidth=lw)
+                        if c.name!="World": self.graphLines[g][c.name]= ax.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name,linewidth=lw)
+                        if c.name=="World": self.graphLines[g][c.name]= ax.plot(gx, ysmoothed[0:len(gx)],color=c.color,linestyle='-.',label= c.name,linewidth=lw)
+
                         if not self.y0Line[g] and "newactive" in g: self.y0Line[g] = ax.axhline(0, color='black', linestyle='--', linewidth=1)
 
                         ax.relim()
@@ -278,7 +283,7 @@ class Graph():
                         self.graphsHandles[g] = newhandles
                         self.graphsLabels[g] = newlabels
 
-                        minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
+                        minx = STARTDAYS if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
                         minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
                         ax.set_xlim(left=minx)
                         self.xlim = minx, len(c.x)
@@ -310,7 +315,6 @@ class Graph():
             # self.inInput = False
             self.draw()
 
-
     def remove(self,event):
         if not self.selectedC: return
         self.All.hide(self.selectedC.name)
@@ -323,7 +327,7 @@ class Graph():
                 ax = self.graphsAx[graph]
                 ax.relim()
                 ax.autoscale_view()
-                minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
+                minx = STARTDAYS if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
                 minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
                 ax.set_xlim(left=minx)
                 ind = self.graphsLabels[graph].index(self.selectedC.name)
@@ -347,7 +351,7 @@ class Graph():
             self.graphDateLine[self.graphs[-1]].remove()
             del self.graphDateLine[self.graphs[-1]]
         if self.selectedC and self.dayBefore < -1:
-            self.graphDateLine[self.graphs[-1]] = self.graphsAx[self.graphs[-1]].axvline(self.All.dates[self.dayBefore],ymin=0,ymax=10000,color="lightgray" )
+            self.graphDateLine[self.graphs[-1]] = self.graphsAx[self.graphs[-1]].axvline(self.selectedC.x[self.dayBefore],ymin=0,ymax=10000,color="lightgray" )
         if self.startWidget: self.startWidget.set_val("")
         plt.figure("Main")
         plt.draw()
@@ -361,7 +365,7 @@ class Graph():
                     for g in self.graphs:
                         ax = self.graphsAx[g]
                         ax.set_xlim(left=int(text))
-                        minx = 35 if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
+                        minx = STARTDAYS if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
                         ax.set_xlim(left=minx)
                     self.draw()
                 else:
@@ -551,7 +555,6 @@ class Graph():
                 c =  self.All.get(lname)
                 if c:
                     line =self.graphLines[graph][lname][0]
-
                     if lname == selected or not selected:
                         line.set_color(c.color)
                         if selected: line.set_linewidth(2.6)
@@ -589,7 +592,7 @@ class Graph():
                 index = math.floor((maxy-y)/nameheight)
                 i = 0
                 self.select(labels[index])
-            elif x > 2:
+            elif x > 2 and y>0:
                 self.dayBefore = -1
                 if self.selectedC:
                     self.showAll  = False
@@ -598,6 +601,9 @@ class Graph():
                     self.graph()
                 else:
                     self.select(None)
+            elif y < 0 and self.selectedC:
+                self.dayBefore = -1*int(len(self.selectedC.x)- x)
+                self.select(self.selectedC.name)
             else:
                 self.inInput = True
         except TypeError:
@@ -695,6 +701,7 @@ class Graph():
             fig.canvas.mpl_connect('key_press_event', self.press)
             fig.canvas.mpl_connect('button_press_event', self.onclick)
             if "Big" in g:
+                self.clickedG = g
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor="None")
                 inputBox = plt.axes([0.066, 0.9, 0.14, 0.055])
                 self.inputWidget = TextBox(inputBox, 'Add\nPlace:', initial="", hovercolor="lightgray")
@@ -735,12 +742,14 @@ class Graph():
                                                     "•Choose starting date/\n  days since Xth case\n",
                                                     "•Click Place in Legend for\n  More Info / to Remove.\n",
                                                     "•With place selected, use\n  arrow keys to navigate\n",
+                                                    "•Click above Date in x-axis\n to jump there\n",
                                                     "•GF: Growth Factor: Rate of\n  growth over past week\n       <1 slowing down\n       >1 speeding up\n",
                                                     "•MR: Mortality Rate",])), transform=ax.transAxes, fontsize=6,
                                                         verticalalignment='top', color ="darkgray",bbox=props)
                 self.helpText.set_visible(False)
                 self.LUtext= ax.text(0.958, 1, "Last Updated:\n "+self.lastUpdated.strftime("%m/%d %H:%M"), transform=ax.transAxes, fontsize=7,
                         verticalalignment='top', color ="darkgray")
+
 
 
 
@@ -782,8 +791,11 @@ class Graph():
 
         self.order(self.sortBy)
         selected = self.selectedC
+        # print(self.clickedG)
         for c in list(reversed(self.countries[:self.limit])): self.add(c.name, loading=True)
         for c in self.countries[self.limit:]: self.countries.remove(c)
         if selected: self.select(selected.name)
+        # if not selected: self.select(None)
+        self.graphsAx[self.clickedG].set_xlim(self.xlim)
         plt.ioff()
         plt.show()

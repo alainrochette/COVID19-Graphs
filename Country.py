@@ -19,7 +19,7 @@ country_colors ={"France":"cornflowerblue", "Ecuador":"cornflowerblue","Honduras
                 "District of Columbia":"forestgreen", "Mexico":"forestgreen","Nigeria":"forestgreen",
                 "Michigan":"orange", "Netherlands":"orange", "Malaysia":"orange", "Colombia":"orange","Dominican Republic":"orange","Cote d'Ivoire":"orange",
                 "Louisiana":"orchid", "United Kingdom":"orchid", "Austria":"orchid", "Japan":"orchid","Guatemala":"orchid",
-                "New York":"grey", "Ireland": "grey",
+                "New York, New York":"grey", "Ireland": "grey",
                 "Lebanon":"slategrey",
                 "Korea, South":"hotpink", "Belgium":"hotpink","Florida":"hotpink","Guam":"hotpink",
                 "California":"darkgoldenrod","Kenya":"darkgoldenrod",
@@ -28,7 +28,7 @@ country_colors ={"France":"cornflowerblue", "Ecuador":"cornflowerblue","Honduras
                 "Peru":"peru", "Maryland":"peru","Cuba":"peru",
                 "Venezuela":"crimson", "Hong Kong":"crimson",
                 "Canada":(32/255,120/255,187/255),
-                "World":"black"}
+                "World":colors.to_rgba("black")}
 light_colors={"cornflowerblue": (200/255,220/255,255/255),
                 "darkkhaki":colors.to_rgba("beige"),
                 "turquoise": (190/255,255/255,255/255),
