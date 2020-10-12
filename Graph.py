@@ -30,6 +30,7 @@ SMALL_SIZE = 7
 MEDIUM_SIZE = 8
 BIGGER_SIZE = 10
 STARTDAYS = 35
+N_DATES = 35
 
 
 
@@ -292,7 +293,8 @@ class Graph():
 
                     if added and self.firstAdd[g]:
                         if self.All.days_since==0 or "/" in str(self.All.days_since):
-                            interval = int(len(self.All.dates)/45)
+                            interval = max(int((len(self.All.dates) - STARTDAYS)/N_DATES),1)
+                            # if self.All.days_since == 0: interval = int((len(self.All.dates) - STARTDAYS)/40)
                             if "Big" in g: ax.set_xticks(self.All.dates[::interval])
                             if not "Big" in g: ax.set_xticks(self.All.dates[::interval*2])
 
@@ -364,6 +366,9 @@ class Graph():
                 if int(text)==0 and "/" in str(self.All.days_since):
                     for g in self.graphs:
                         ax = self.graphsAx[g]
+                        interval = max(int((ax.get_xlim()[1] - STARTDAYS)/N_DATES),1)
+                        if "Big" in g: ax.set_xticks(self.All.dates[::interval])
+                        if not "Big" in g: ax.set_xticks(self.All.dates[::interval*2])
                         ax.set_xlim(left=int(text))
                         minx = STARTDAYS if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
                         ax.set_xlim(left=minx)
@@ -371,10 +376,15 @@ class Graph():
                 else:
                     self.load(self.All.region,int(text))
             elif "/" in text and text in self.All.dates:
+
                 for g in self.graphs:
                     ax = self.graphsAx[g]
+                    interval = max(int((len(self.All.dates) - self.All.dates.index(text))/N_DATES),1)
+
+                    if "Big" in g: ax.set_xticks(self.All.dates[::interval])
+                    if not "Big" in g: ax.set_xticks(self.All.dates[::interval*2])
                     self.All.days_since = text
-                    ax.set_xlim(left=self.All.dates.index(text))
+                    ax.set_xlim(left=self.All.dates.index(text), right=len(self.All.dates))
                 self.draw()
         except ValueError:
             pass
@@ -548,7 +558,7 @@ class Graph():
             self.infoBox.set_visible(False)
             self.infoBox.text(0,0,"")
             # self.infoWidget.set_val("")
-        if "Big" in self.clickedG: self.graphsAx[self.clickedG].set_xlim(self.xlim)
+        # if "Big" in self.clickedG: self.graphsAx[self.clickedG].set_xlim(self.xlim)
         for graph in self.graphs:
             labels = self.graphsLabels[graph]
             for lname in labels:
@@ -557,7 +567,7 @@ class Graph():
                     line =self.graphLines[graph][lname][0]
                     if lname == selected or not selected:
                         line.set_color(c.color)
-                        if selected: line.set_linewidth(2.6)
+                        if selected: line.set_linewidth(3)
 
                         if selected: self.selectedC = c
                         if not selected: line.set_linewidth(1.7)
@@ -755,7 +765,7 @@ class Graph():
 
 
                 active_region ={"My List":0, "World":1,"States":2,"Europe":3,"Asia":4, "Africa":5,"South America":6, "Americas":7 ,"Other":8}
-                rax = plt.axes([0.222, 0.68, 0.12, 0.22], facecolor='None')
+                rax = plt.axes([0.222, 0.68, 0.12, 0.22],facecolor=(1.0, 1.0, 1.0, 0.7))
                 radio = RadioButtons(rax, ('My List', 'World','States', 'Europe', 'Asia', 'Africa','South America', 'Americas','Other'),active=active_region[self.All.region],activecolor='lightgray')
                 radio.on_clicked(self.change_regions)
 
@@ -767,14 +777,14 @@ class Graph():
 
 
                 if len(self.countries) > 12:
-                    self.raxSort = plt.axes([0.2275, 0.49, 0.085, 0.16], facecolor='None')
+                    self.raxSort = plt.axes([0.2275, 0.49, 0.085, 0.16], facecolor=(1.0, 1.0, 1.0, 0.7))
                     sortOptions={"casesPerM":0, "newcasesPerM":1,"deathsPerM":2,"newdeathsPerM":3,"avgcasesGF":4, "avgdeathsGF":5, "activePerM":6}
                     radioSort = RadioButtons(self.raxSort, ('Cases', 'New Cases','Deaths', 'New Deaths', 'Cases Growth', 'Deaths Growth', 'Active'),active=sortOptions[self.sortBy],activecolor='lightgray')
                     # sortBox.text(0,0,"Sort By:",color=[0.5,0.5,0.5],size=6)
                     self.sortButton = Button(plt.axes([0.222, 0.65, 0.04, 0.025]), "Sort By:",color="whitesmoke" ,hovercolor="lightgray")
                     self.sortButton.label.set_fontsize(7)
                 else:
-                    self.raxSort = plt.axes([0.229, 0.52, 0.07, 0.13], facecolor='None')
+                    self.raxSort = plt.axes([0.229, 0.52, 0.07, 0.13], facecolor=(1.0, 1.0, 1.0, 0.7))
                     sortOptions={"casesPerM":0, "newcasesPerM":1,"deathsPerM":2,"newdeathsPerM":3, "activePerM":4}
                     if self.sortBy not in sortOptions:
                         self.sortBy = "newcasesPerM"
