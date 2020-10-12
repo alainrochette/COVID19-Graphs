@@ -1,5 +1,5 @@
 from Country import Country, Countries
-from Prediction import Prediction
+# from Prediction import Prediction
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.widgets import TextBox, RadioButtons, Button
@@ -129,27 +129,27 @@ class Graph():
             self.country_info(self.selectedC)
             self.draw()
 
-    def predict(self,event):
-        c = self.selectedC
-        pred = Prediction(c, self.clickedG)
-        y_train_pred=pred.fitted
-
-        # fig = plt.figure("New",figsize=(15,7))
-        # ax = fig.add_subplot(111)
-        ax = self.graphsAx[self.clickedG]
-        newy = y_train_pred
-        if "death" in self.clickedG:
-            newy = [y * sum(c.deaths) for y in newy]
-        else:
-            newy = [y * sum(c.cases) for y in newy]
-        # ax.plot(pred.xdata, pred.ydata, color="black", linewidth=1, label='train')
-        if self.predictLine:
-            self.predictLine[0].remove()
-            del self.predictLine[0]
-        self.predictLine = ax.plot(pred.newxdata, newy[:len(pred.newxdata)], color="black", linewidth=1, label='model')
-        ax.set_xlim(right=len(c.x)+len(pred.newxdata))
-        ax.relim()
-        plt.show()
+    # def predict(self,event):
+    #     c = self.selectedC
+    #     pred = Prediction(c, self.clickedG)
+    #     y_train_pred=pred.fitted
+    #
+    #     # fig = plt.figure("New",figsize=(15,7))
+    #     # ax = fig.add_subplot(111)
+    #     ax = self.graphsAx[self.clickedG]
+    #     newy = y_train_pred
+    #     if "death" in self.clickedG:
+    #         newy = [y * sum(c.deaths) for y in newy]
+    #     else:
+    #         newy = [y * sum(c.cases) for y in newy]
+    #     # ax.plot(pred.xdata, pred.ydata, color="black", linewidth=1, label='train')
+    #     if self.predictLine:
+    #         self.predictLine[0].remove()
+    #         del self.predictLine[0]
+    #     self.predictLine = ax.plot(pred.newxdata, newy[:len(pred.newxdata)], color="black", linewidth=1, label='model')
+    #     ax.set_xlim(right=len(c.x)+len(pred.newxdata))
+    #     ax.relim()
+    #     plt.show()
 
     def sir_model(self, y, x, beta, gamma):
         S = -beta * y[0] * y[1] / (self.selectedC.pop*1000000)
