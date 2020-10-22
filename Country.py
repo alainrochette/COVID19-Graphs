@@ -55,25 +55,67 @@ light_colors={"cornflowerblue": (200/255,220/255,255/255),
 populationD ={"World":7800}
 
 class Countries:
-    def __init__(self,region,days_since=0,colors=None):
-        self.days_since = days_since
+    def __init__(self,region,days_since=0):
+        self.world_countries = []
+        self.countries_cache = []
+        self.country_colors = country_colors
         self.countries = list()
         self.dates = []
-        self.countries_list = []
-        self.regions = {}
-        self.region = region
-        self.country_colors = colors if colors else country_colors
-        self.loadRegion()
+        self.regions  = {"World":[],
+                        "South America": [ "Chile", "Argentina", "Colombia",
+                                        "Uruguay", "Paraguay", "Venezuela",
+                                        "Peru", "Bolivia", "Ecuador", "Brazil", "Panama"],
+                        "Europe":["Germany", "Italy", "Spain", "United Kingdom",
+                                "France", "Switzerland", "Poland", "Sweden",
+                                "Austria", "Belgium", "Portugal", "Greece", "Luxembourg",
+                                "Netherlands", "Denmark", "Ireland","Romania","Serbia","Iceland", "Finland","Andorra"],
+                        "States":["Alabama", "Alaska", "American Samoa",
+                                "Arizona", "Arkansas", "California", "Colorado",
+                                "Connecticut", "Delaware", "District of Columbia",
+                                "Florida", "Georgia*", "Hawaii", "Idaho", "Illinois",
+                                "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine",
+                                "Maryland", "Massachusetts", "Michigan", "Minnesota",
+                                "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
+                                "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina",
+                                "North Dakota","Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Puerto Rico",
+                                "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas",
+                                "Virgin Islands", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"],
+                        "Asia": [ "Japan", "Indonesia", "China", "India", "Turkey",
+                                "Thailand", "Korea, South","Singapore", "Vietnam",
+                                "Phillippines", "Hong Kong", "Malaysia", "Iran", "Pakistan",
+                                "Israel", "Cambodia", "Taiwan", "Iraq","Qatar","Syria","Lebanon","Jordan","Saudi Arabia"],
+                        "Africa":[ "Kenya","Nigeria", "Morocco", "Madagascar",
+                                    "South Africa", "Egypt", "Algeria",
+                                    "Cameroon", "Cote d'Ivoire"],
+                        "Americas":[ "Mexico","Honduras", "Cuba", "Costa Rica",
+                                    "Haiti", "Dominican Republic","Guatemala","Canada","Jamaica","US"],
+                        "Other": []
+                        }
+        with open('csse_covid_19_time_series/time_series_covid19_confirmed_global.csv') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                self.world_countries = list(set([row[1] for row in csv_reader if "Country" not in row[1]]))
+                csv_file.close()
+        self.regions["World"] = self.world_countries
+        for c in self.world_countries:
+            found = False
+            for r in ["South America","Europe","Asia","Africa","Americas"]:
+                if c in self.regions[r]:
+                    found = True
+                    break
+            if not found: self.regions["Other"].append(c)
+        self.loadRegion(region, days_since)
 
     def show(self, c):
         for country in self.countries:
             if country.name.replace(" ","").lower() == c.replace(" ","").lower():
                  country.vis = 1
-                 self.countries_list.append(country.name)
-                 self.countries_list = list(set(self.countries_list))
+                 if country not in self.countries_list: self.countries_list.append(country)
+                  # self.countries_list.append(country.name)
+                 # self.countries_list = list(set(self.countries_list))
                  if self.region == "My List":
                      with open('myCache/My_List.txt', 'wb') as fp:
-                         pickle.dump(self.countries_list, fp)
+                         pickle.dump([c.name for c in self.countries_list], fp)
+                         # pickle.dump(self.countries_list, fp)
                  return country
         return self.addOther(c)
 
@@ -87,11 +129,13 @@ class Countries:
         for country in self.countries:
             if country.name == c:
                  country.vis = 0
-                 self.countries_list = list(set(self.countries_list))
-                 self.countries_list.remove(country.name)
+                 # self.countries_list = list(set(self.countries_list))
+                 # self.countries_list.remove(country.name)
+                 if country in self.countries_list: self.countries_list.remove(country)
                  if self.region == "My List":
                      with open('myCache/My_List.txt',  'wb') as fp:
-                         pickle.dump(self.countries_list, fp)
+                         pickle.dump([c.name for c in self.countries_list], fp)
+                         # pickle.dump(self.countries_list, fp)
                  return True
         return False
 
@@ -139,7 +183,8 @@ class Countries:
             self.countries.append(c)
             if self.region == "My List":
                 with open('myCache/My_List.txt',  'wb') as fp:
-                    pickle.dump(list(set(self.countries_list)), fp)
+                    # pickle.dump(list(set(self.countries_list)), fp)
+                    pickle.dump([c.name for c in self.countries_list], fp)
             with open('csse_covid_19_time_series/time_series_covid19_deaths_global.csv') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 line_count = 0
@@ -227,7 +272,8 @@ class Countries:
             self.countries.append(c)
             if self.region == "My List":
                 with open('myCache/My_List.txt',  'wb') as fp:
-                    pickle.dump(list(set(self.countries_list)), fp)
+                    pickle.dump([c.name for c in self.countries_list], fp)
+                    # pickle.dump(list(set(self.countries_list)), fp)
             with open('csse_covid_19_time_series/time_series_covid19_deaths_US.csv') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 line_count = 0
@@ -289,48 +335,15 @@ class Countries:
         setattr(c,type,norm)
         setattr(c,"new"+type,new)
 
-    def loadRegion(self):
-        self.regions  = {"World":[],
-                        "South America": [ "Chile", "Argentina", "Colombia",
-                                        "Uruguay", "Paraguay", "Venezuela",
-                                        "Peru", "Bolivia", "Ecuador", "Brazil", "Panama"],
-                        "Europe":["Germany", "Italy", "Spain", "United Kingdom",
-                                "France", "Switzerland", "Poland", "Sweden",
-                                "Austria", "Belgium", "Portugal", "Greece", "Luxembourg",
-                                "Netherlands", "Denmark", "Ireland","Romania","Serbia","Iceland", "Finland","Andorra"],
-                        "States":["Alabama", "Alaska", "American Samoa",
-                                "Arizona", "Arkansas", "California", "Colorado",
-                                "Connecticut", "Delaware", "District of Columbia",
-                                "Florida", "Georgia*", "Hawaii", "Idaho", "Illinois",
-                                "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine",
-                                "Maryland", "Massachusetts", "Michigan", "Minnesota",
-                                "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
-                                "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina",
-                                "North Dakota","Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Puerto Rico",
-                                "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas",
-                                "Virgin Islands", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"],
-                        "Asia": [ "Japan", "Indonesia", "China", "India", "Turkey",
-                                "Thailand", "Korea, South","Singapore", "Vietnam",
-                                "Phillippines", "Hong Kong", "Malaysia", "Iran", "Pakistan",
-                                "Israel", "Cambodia", "Taiwan", "Iraq","Qatar","Syria","Lebanon","Jordan","Saudi Arabia"],
-                        "Africa":[ "Kenya","Nigeria", "Morocco", "Madagascar",
-                                    "South Africa", "Egypt", "Algeria",
-                                    "Cameroon", "Cote d'Ivoire"],
-                        "Americas":[ "Mexico","Honduras", "Cuba", "Costa Rica",
-                                    "Haiti", "Dominican Republic","Guatemala","Canada","Jamaica","US"],
-                        "Other": [ "Russia", "New Zealand","Australia","Guam","Greenland","Reunion","Kazakhstan","Seychelles","Belarus"]
-                        }
-        for r in self.regions:
-            if r != "States" and r!= "World":
-                for c in self.regions[r]:
-                    self.regions["World"].append(c)
-
+    def loadRegion(self, region, days_since):
+        self.days_since = days_since
+        self.countries_list = []
+        # self.dates = []
+        self.region = region
         try:
             with open('myCache/My_List.txt',  'rb') as fp:
                 mycountries = list(set(pickle.load(fp)))
         except FileNotFoundError:
-            # mycountries = [ "Chile","Brazil", "US",
-            #                 "Russia", "United Kingdom", ]
             mycountries = [ "Chile","Argentina","Miami-Dade, Florida", "US",
                             "Spain", "Italy", "United Kingdom", "Netherlands", "Florida"]
             with open('myCache/My_List.txt',  'wb') as fp:
@@ -366,4 +379,5 @@ class Country:
         self.testing = ""
         self.allrecovered  = ["?"]
         All.country_colors[name] = color
-        All.countries_list.append(name)
+        # All.countries_list.append(name)
+        All.countries_list.append(self)

@@ -31,6 +31,7 @@ MEDIUM_SIZE = 8
 BIGGER_SIZE = 10
 STARTDAYS = 35
 N_DATES = 35
+NUMCOUNTRIES = 15
 
 
 
@@ -41,7 +42,7 @@ class Graph():
         self.big = "newcasesPerM"
         self.params = False
         self.scale = 1
-        self.limit = 12
+        self.limit = NUMCOUNTRIES
         self.ylim = None
         self.xlim = None
         self.showAll= False
@@ -90,10 +91,12 @@ class Graph():
 
     def load(self,region, days_since=0):
         self.region = region
-        self.limit  = 120 if region == "My List" else 12
-        country_colors =  self.All.country_colors if self.All else None
-        self.All = Countries(region,days_since,colors=country_colors)
-        self.countries = self.All.countries
+        self.limit  = 120 if region == "My List" else NUMCOUNTRIES
+        if not self.All:
+            self.All = Countries(region,days_since)
+        else:
+            self.All.loadRegion(region, days_since)
+        self.countries = self.All.countries_list
         if self.lastUpdated == "???": self.lastUpdated = datetime.strptime(self.All.dates[-1], '%m/%d/%y')
         self.graph()
 
@@ -283,7 +286,6 @@ class Graph():
                         newhandles, newlabels = self.labelOrder(handles,labels, g.replace("Big",""))
                         self.graphsHandles[g] = newhandles
                         self.graphsLabels[g] = newlabels
-
                         minx = STARTDAYS if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
                         minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
                         ax.set_xlim(left=minx)
@@ -372,6 +374,7 @@ class Graph():
                         ax.set_xlim(left=int(text))
                         minx = STARTDAYS if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
                         ax.set_xlim(left=minx)
+                    self.All.days_since = 0
                     self.draw()
                 else:
                     self.load(self.All.region,int(text))
@@ -595,9 +598,8 @@ class Graph():
         self.inInput = False
         self.showAll= False
         labels = self.graphsLabels[self.clickedG]
-
         try:
-            if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 10 and  y < maxy and y > maxy - (nameheight*len(labels)):
+            if x > 2 and x < self.graphsAx[self.clickedG].get_xlim()[0] + 0.15*(self.graphsAx[self.clickedG].get_xlim()[1] - self.graphsAx[self.clickedG].get_xlim()[0]) and  y < maxy and y > maxy - (nameheight*len(labels)):
                 count = len(labels)
                 index = math.floor((maxy-y)/nameheight)
                 i = 0
@@ -776,7 +778,7 @@ class Graph():
 
 
 
-                if len(self.countries) > 12:
+                if len(self.countries) > NUMCOUNTRIES:
                     self.raxSort = plt.axes([0.2275, 0.49, 0.085, 0.16], facecolor=(1.0, 1.0, 1.0, 0.7))
                     sortOptions={"casesPerM":0, "newcasesPerM":1,"deathsPerM":2,"newdeathsPerM":3,"avgcasesGF":4, "avgdeathsGF":5, "activePerM":6}
                     radioSort = RadioButtons(self.raxSort, ('Cases', 'New Cases','Deaths', 'New Deaths', 'Cases Growth', 'Deaths Growth', 'Active'),active=sortOptions[self.sortBy],activecolor='lightgray')
