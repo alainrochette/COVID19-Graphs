@@ -16,8 +16,7 @@ from scipy.integrate import odeint
 from scipy import optimize, stats
 import numpy as np
 import random
-import PyQt5
-from PyQt5.QtWidgets import *
+import time
 
 # plt.rc('text', usetex=True)
 
@@ -37,7 +36,12 @@ NUMCOUNTRIES = 15
 
 class Graph():
     def __init__(self, lastUpdated):
-        self.All  = None
+        try:
+            with open('myCache/Countries.txt',  'rb') as fp:
+                self.All = pickle.load(fp)
+                # print("Loading ", len(self.All.countries), " Countries...")
+        except:
+            self.All = None
         self.fig = None
         self.big = "newcasesPerM"
         self.params = False
@@ -98,6 +102,7 @@ class Graph():
             self.All.loadRegion(region, days_since)
         self.countries = self.All.countries_list
         if self.lastUpdated == "???": self.lastUpdated = datetime.strptime(self.All.dates[-1], '%m/%d/%y')
+
         self.graph()
 
     def setParams(self):
@@ -130,6 +135,7 @@ class Graph():
                         line.set_color(c.color)
                         found = True
                         break
+            self.All.save()
             self.country_info(self.selectedC)
             self.draw()
 
@@ -250,8 +256,9 @@ class Graph():
     def add(self,text, loading=False):
         if not loading: self.limit = 120
         if text != "":
-            if self.All.get(text):
-                self.selectedC = self.All.show(text)
+            found_c = self.All.get(text)
+            if found_c:
+                self.selectedC = self.All.show(found_c)
             else:
                 self.selectedC = self.All.addOther(text)
             if self.selectedC:
@@ -314,9 +321,12 @@ class Graph():
                 self.colorWidget = None
                 self.addToListWidget = None
                 self.inputWidget.set_val("")
-                if not loading: self.select(self.selectedC.name)
+                if not loading:
+                    self.select(self.selectedC.name)
+                    if self.region == "My List":
+                        self.All.make_vis(self.selectedC)
             if loading: self.selectedC = None
-            # self.inInput = False
+
             self.draw()
 
     def remove(self,event):
@@ -417,6 +427,7 @@ class Graph():
         self.selectedC = c
 
         name = c.name.split(",")[0] if "," in c.name else c.name.replace(" ","\ ")
+        name = name[:15] + '..' * (len(name) > 15)
         place = r"$\bf{}$".format(name.upper())
         dateBef = "{date}".format(date=c.dates[self.dayBefore])
         pop = "pop {:,.1f}K".format(round(c.pop*1000,2)) if c.pop < 0.1 else "pop {:,.1f}M".format(round(c.pop,2))
@@ -634,6 +645,7 @@ class Graph():
         with open('myCache/lastUpdated.txt',  'wb') as fp:
             pickle.dump(lastUpdated, fp)
         self.lastUpdated = lastUpdated
+        self.All = None
         self.load("My List")
 
     def toggleSettings(self, event):
@@ -674,7 +686,6 @@ class Graph():
 
         for g in self.graphs:
             self.firstAdd[g] = True
-
             if "Big" in g:
                 plt.rc('legend', fontsize=BIGGER_SIZE-0.5)
                 plt.rc('axes', labelsize=MEDIUM_SIZE,edgecolor='white',labelcolor='dimgray')
@@ -804,8 +815,11 @@ class Graph():
         self.order(self.sortBy)
         selected = self.selectedC
         # print(self.clickedG)
+
         for c in list(reversed(self.countries[:self.limit])): self.add(c.name, loading=True)
         for c in self.countries[self.limit:]: self.countries.remove(c)
+
+
         if selected: self.select(selected.name)
         # if not selected: self.select(None)
         self.graphsAx[self.clickedG].set_xlim(self.xlim)

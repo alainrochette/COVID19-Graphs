@@ -27,31 +27,8 @@ country_colors ={"France":"cornflowerblue", "Ecuador":"cornflowerblue","Honduras
                 "China":"orangered", "Chile":"orangered", "Switzerland":"orangered","Rhode Island":"orangered","South Africa":"orangered",
                 "Peru":"peru", "Maryland":"peru","Cuba":"peru",
                 "Venezuela":"crimson", "Hong Kong":"crimson",
-                "Canada":(32/255,120/255,187/255),
-                "World":colors.to_rgba("black")}
-light_colors={"cornflowerblue": (200/255,220/255,255/255),
-                "darkkhaki":colors.to_rgba("beige"),
-                "turquoise": (190/255,255/255,255/255),
-                "dimgray": colors.to_rgba("lightgray"),
-                "skyblue":(230/255,245/255,255/255),
-                "deepskyblue":(215/255,235/255,255/255),
-                "steelblue":(215/255,230/255,255/255),
-                "darkorchid":(240/255,220/255,255/255),
-                "gold":colors.to_rgba("cornsilk"),
-                "limegreen":(210/255,245/255,210/255),
-                "forestgreen": (195/255,230/255,195/255),
-                "orange": colors.to_rgba("moccasin"),
-                "orchid": colors.to_rgba("lavender"),
-                "grey": (230/255,230/255,230/255),
-                "slategrey": colors.to_rgba("gainsboro"),
-                "hotpink": colors.to_rgba("lavenderblush"),
-                "darkgoldenrod": colors.to_rgba("wheat"),
-                "goldenrod": colors.to_rgba("papayawhip"),
-                "orangered":colors.to_rgba("mistyrose"),
-                "peru": colors.to_rgba("wheat"),
-                "crimson":colors.to_rgba("pink")
-                }
-
+                "World":"black"}
+country_colors  = {k:colors.to_rgba(country_colors[k]) for k in country_colors.keys()}
 populationD ={"World":7800}
 
 class Countries:
@@ -103,21 +80,49 @@ class Countries:
                     found = True
                     break
             if not found: self.regions["Other"].append(c)
+        try:
+            with open('myCache/My_List.txt',  'rb') as fp:
+                mycountries = list(set(pickle.load(fp)))
+                print(mycountries)
+        except FileNotFoundError:
+            mycountries = [ "Chile","Argentina","Miami-Dade, Florida", "US",
+                            "Spain", "Italy", "United Kingdom", "Netherlands", "Florida", "World", "California", "New York, New York"]
+            print("WTF",mycountries)
+            with open('myCache/My_List.txt',  'wb') as fp:
+                pickle.dump(mycountries, fp)
+        self.regions["My List"] = mycountries
         self.loadRegion(region, days_since)
 
+    def make_vis(self, c):
+        c.vis = 1
+        if c not in self.countries_list: self.countries_list.append(c)
+        if self.region == "My List":
+            self.regions[self.region] = self.countries_list
+            with open('myCache/My_List.txt', 'wb') as fp:
+                pickle.dump([cc.name for cc in self.countries_list], fp)
+            fp.close()
+            self.save()
+
+    def make_invis(self, c):
+        c.vis = 0
+        if c in self.countries_list: self.countries_list.remove(c)
+        if self.region == "My List":
+            self.regions[self.region] = self.countries_list
+            with open('myCache/My_List.txt',  'wb') as fp:
+                pickle.dump([cc.name for cc in self.countries_list], fp)
+            self.save()
+
     def show(self, c):
+        if isinstance(c, Country):
+            self.make_vis(c)
+            return c
         for country in self.countries:
             if country.name.replace(" ","").lower() == c.replace(" ","").lower():
-                 country.vis = 1
-                 if country not in self.countries_list: self.countries_list.append(country)
-                  # self.countries_list.append(country.name)
-                 # self.countries_list = list(set(self.countries_list))
-                 if self.region == "My List":
-                     with open('myCache/My_List.txt', 'wb') as fp:
-                         pickle.dump([c.name for c in self.countries_list], fp)
-                         # pickle.dump(self.countries_list, fp)
-                 return country
-        return self.addOther(c)
+                self.make_vis(country)
+                return country
+        show_c = self.addOther(c)
+        return show_c
+
 
     def get(self, c):
         self.countries = list(self.countries)
@@ -126,17 +131,13 @@ class Countries:
         return 0
 
     def hide(self, c):
+        if isinstance(c, Country):
+            self.make_invis(c)
+            return True
         for country in self.countries:
             if country.name == c:
-                 country.vis = 0
-                 # self.countries_list = list(set(self.countries_list))
-                 # self.countries_list.remove(country.name)
-                 if country in self.countries_list: self.countries_list.remove(country)
-                 if self.region == "My List":
-                     with open('myCache/My_List.txt',  'wb') as fp:
-                         pickle.dump([c.name for c in self.countries_list], fp)
-                         # pickle.dump(self.countries_list, fp)
-                 return True
+                self.make_invis(country)
+                return True
         return False
 
     def addOther(self,name):
@@ -229,14 +230,13 @@ class Countries:
                             if ("CDC" not in row[0]) and ((name.lower() ==n) or (name=="US" and n =="united states")):
                                 dt = datetime.datetime.strptime(row[1], '%Y-%m-%d').strftime('%m/%d')
                                 try:
-                                    c.testing = dt +"|{:,.0f}".format(int(row[7])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.1f}".format(int(float(row[8]))/10) + "%)"
+                                    c.testing = dt +"|{:,.0f}".format(int(row[6])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.1f}".format(int(float(row[8]))/10) + "%)"
                                 except ValueError:
                                     pass
                                 break
             return c
         else:
             return self.addState(name)
-
 
     def addState(self,place):
         found = False
@@ -309,7 +309,6 @@ class Countries:
             return c
         return 0
 
-
     def clean(self,c,type):
         days_since = 0 if "/" in str(self.days_since) else self.days_since
         if type == "cases":
@@ -338,19 +337,19 @@ class Countries:
     def loadRegion(self, region, days_since):
         self.days_since = days_since
         self.countries_list = []
-        # self.dates = []
         self.region = region
-        try:
-            with open('myCache/My_List.txt',  'rb') as fp:
-                mycountries = list(set(pickle.load(fp)))
-        except FileNotFoundError:
-            mycountries = [ "Chile","Argentina","Miami-Dade, Florida", "US",
-                            "Spain", "Italy", "United Kingdom", "Netherlands", "Florida"]
-            with open('myCache/My_List.txt',  'wb') as fp:
-                pickle.dump(mycountries, fp)
-        self.regions["My List"] = mycountries
+        before = len(self.countries)
         for c in self.regions[self.region]:
             self.show(c)
+        if len(self.countries) != before:
+            self.save()
+
+    def save(self):
+        with open('myCache/Countries.txt', 'wb') as fp:
+            pickle.dump(self, fp)
+        fp.close()
+
+
 
 
 class Country:
@@ -360,7 +359,8 @@ class Country:
         self.vis = 0
         self.color= color
         self.defcolor= color
-        self.lightcolor = [x + (1 - x) * 0.35 for x in light_colors[color]] if isinstance(color, str) else [x + (1 - x) * 0.9 for x in color]
+        # self.lightcolor = [x + (1 - x) * 0.35 for x in light_colors[color]] if isinstance(color, str) else [x + (1 - x) * 0.9 for x in color]
+        self.lightcolor = [x + (1 - x) * 0.9 for x in color]
         self.dates = []
         self.newcases = []
         self.newcasesPerM = []
