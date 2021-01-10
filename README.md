@@ -15,7 +15,7 @@ ___
   * **Add Any Place:** (Country, US City, US State)
   
        - e.g.: *"Lithuania", "Los Angeles, California", "Texas"*
-  * **Country Info:** Click Place in legend for more info to remove from list
+  * **Country Info:** Click Place in legend for more info
   * **Start Date:** Choose starting date/days since Xth case
   * **Update Data:** Check for Updates in Settings > Update Data
  
