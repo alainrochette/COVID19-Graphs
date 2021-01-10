@@ -47,7 +47,7 @@ class Graph():
         self.params = False
         self.scale = 1
         self.limit = NUMCOUNTRIES
-        self.ylim = None
+        self.ylim = 0
         self.xlim = None
         self.showAll= False
         self.selectedC  = None
@@ -279,6 +279,8 @@ class Graph():
                         # ysigma = 0.5
                         if "newactive" in g: ysigma = 2.5
                         if "death" in g: ysigma = 2
+                        if "Big" in g:
+                            self.ylim = max(max(gy)/(ysigma**2),self.ylim)
                         ysmoothed = gaussian_filter1d(gy, sigma=ysigma)
                         lw =1.7
                         if c.name!="World": self.graphLines[g][c.name]= ax.plot(gx, ysmoothed[0:len(gx)],color=c.color,label= c.name,linewidth=lw)
@@ -297,6 +299,7 @@ class Graph():
                         minx = self.All.dates.index(self.All.days_since) if "/" in str(self.All.days_since) else minx
                         ax.set_xlim(left=minx)
                         self.xlim = minx, len(c.x)
+
                         added = True
 
 
@@ -373,37 +376,44 @@ class Graph():
         plt.draw()
 
     def change_start(self,text):
-        try:
-            if (text.isdigit() and int(text) != self.All.days_since):
-                if int(text)==0 and "/" in str(self.All.days_since):
+        if "-" in text:
+            for g in self.graphs:
+                if "Big" in g:
+                    ax = self.graphsAx[g]
+                    if len(text) != 1: ax.set_ylim(0,int(text.replace("-","")))
+                    if len(text) == 1: ax.set_ylim(0,self.ylim)
+                    self.draw()
+        else:
+            try:
+                if (text.isdigit() and int(text) != self.All.days_since):
+                    if int(text)==0 and "/" in str(self.All.days_since):
+                        for g in self.graphs:
+                            ax = self.graphsAx[g]
+                            interval = max(int((ax.get_xlim()[1] - STARTDAYS)/N_DATES),1)
+                            if "Big" in g: ax.set_xticks(self.All.dates[::interval])
+                            if not "Big" in g: ax.set_xticks(self.All.dates[::interval*2])
+                            ax.set_xlim(left=int(text))
+                            minx = STARTDAYS if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
+                            ax.set_xlim(left=minx)
+                        self.All.days_since = 0
+                        self.draw()
+                    else:
+                        self.load(self.All.region,int(text))
+                elif "/" in text and text in self.All.dates:
+
                     for g in self.graphs:
                         ax = self.graphsAx[g]
-                        interval = max(int((ax.get_xlim()[1] - STARTDAYS)/N_DATES),1)
+                        interval = max(int((len(self.All.dates) - self.All.dates.index(text))/N_DATES),1)
+
                         if "Big" in g: ax.set_xticks(self.All.dates[::interval])
                         if not "Big" in g: ax.set_xticks(self.All.dates[::interval*2])
-                        ax.set_xlim(left=int(text))
-                        minx = STARTDAYS if self.All.days_since==0 or "/" in str(self.All.days_since) else 0
-                        ax.set_xlim(left=minx)
-                    self.All.days_since = 0
+                        self.All.days_since = text
+                        ax.set_xlim(left=self.All.dates.index(text), right=len(self.All.dates))
                     self.draw()
-                else:
-                    self.load(self.All.region,int(text))
-            elif "/" in text and text in self.All.dates:
-
-                for g in self.graphs:
-                    ax = self.graphsAx[g]
-                    interval = max(int((len(self.All.dates) - self.All.dates.index(text))/N_DATES),1)
-
-                    if "Big" in g: ax.set_xticks(self.All.dates[::interval])
-                    if not "Big" in g: ax.set_xticks(self.All.dates[::interval*2])
-                    self.All.days_since = text
-                    ax.set_xlim(left=self.All.dates.index(text), right=len(self.All.dates))
-                self.draw()
-        except ValueError:
-            pass
+            except ValueError:
+                pass
 
     def change_regions(self,region,selected=False):
-
         if not selected: self.selectedC  = None
         plt.figure("Main")
         plt.close('all')
@@ -683,6 +693,7 @@ class Graph():
         self.predictWidget = None
         self.colorBox = None
         self.addToListWidget = None
+        self.ylim = 0
 
         for g in self.graphs:
             self.firstAdd[g] = True

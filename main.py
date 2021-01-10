@@ -7,7 +7,7 @@ def main():
     if "--install" in sys.argv:
         os.system("clear")
         print("---- Installing scipy, matplotlib ----\n")
-        os.system("python3 -m pip install --user scipy matplotlib")
+        os.system("python3 -m pip3 install --user scipy matplotlib")
         if sys.platform == "darwin":
             print("\n---- Installing XCode Command Line Tools ----\n")
             os.system("xcode-select --install")

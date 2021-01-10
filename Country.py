@@ -63,31 +63,32 @@ class Countries:
                                 "Israel", "Cambodia", "Taiwan", "Iraq","Qatar","Syria","Lebanon","Jordan","Saudi Arabia"],
                         "Africa":[ "Kenya","Nigeria", "Morocco", "Madagascar",
                                     "South Africa", "Egypt", "Algeria",
-                                    "Cameroon", "Cote d'Ivoire"],
+                                    "Cameroon", "Cote d'Ivoire", "Congo (Kinshasa)", "Congo (Brazzaville)", "Ethiopia", "Ghana",
+                                    "Tanzania", "Mali", "Senegal", "Uganda", "Zambia", "Sudan", "Angola", "Somalia", "Zimbabwe",
+                                    "Rwanda", "Algeria", "Niger", "Tunisia", "Libya", "Mozambique", "Namibia", "Liberia", "Burma Faso",
+                                    "Guinea", "Malawi", "Togo", "Botswana", "Cabo Verde", "Chad", "Gabon", "Sierra Leone", "Mauritania"],
                         "Americas":[ "Mexico","Honduras", "Cuba", "Costa Rica",
                                     "Haiti", "Dominican Republic","Guatemala","Canada","Jamaica","US"],
-                        "Other": []
+                        "Other": ["Australia", "New Zealand", "Antarctica", "Russia", "Japan", "South Korea"]
                         }
         with open('csse_covid_19_time_series/time_series_covid19_confirmed_global.csv') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 self.world_countries = list(set([row[1] for row in csv_reader if "Country" not in row[1]]))
                 csv_file.close()
         self.regions["World"] = self.world_countries
-        for c in self.world_countries:
-            found = False
-            for r in ["South America","Europe","Asia","Africa","Americas"]:
-                if c in self.regions[r]:
-                    found = True
-                    break
-            if not found: self.regions["Other"].append(c)
+        # for c in self.world_countries:
+        #     found = False
+        #     for r in ["South America","Europe","Asia","Africa","Americas"]:
+        #         if c in self.regions[r]:
+        #             found = True
+        #             break
+        #     if not found: self.regions["Other"].append(c)
         try:
             with open('myCache/My_List.txt',  'rb') as fp:
                 mycountries = list(set(pickle.load(fp)))
-                print(mycountries)
         except FileNotFoundError:
             mycountries = [ "Chile","Argentina","Miami-Dade, Florida", "US",
                             "Spain", "Italy", "United Kingdom", "Netherlands", "Florida", "World", "California", "New York, New York"]
-            print("WTF",mycountries)
             with open('myCache/My_List.txt',  'wb') as fp:
                 pickle.dump(mycountries, fp)
         self.regions["My List"] = mycountries
@@ -228,7 +229,7 @@ class Countries:
                             pass
                         else:
                             if ("CDC" not in row[0]) and ((name.lower() ==n) or (name=="US" and n =="united states")):
-                                dt = datetime.datetime.strptime(row[1], '%Y-%m-%d').strftime('%m/%d')
+                                dt = datetime.datetime.strptime(row[2], '%Y-%m-%d').strftime('%m/%d')
                                 try:
                                     c.testing = dt +"|{:,.0f}".format(int(row[6])) + " " + row[0].split(" - ")[1].replace("(COVID Tracking Project)","") + " ("+ "{:,.1f}".format(int(float(row[8]))/10) + "%)"
                                 except ValueError:
