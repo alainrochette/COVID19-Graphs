@@ -19,10 +19,6 @@ ___
   * **Start Date:** Choose starting date/days since Xth case
   * **Update Data:** Check for Updates in Settings > Update Data
  
-
-* Optional:
-  * Country.py: Set country color (will default to random)
- 
 #
 *footnote: When written without City, "Georgia" = Country and "Georgia\*" = State :)*
 
