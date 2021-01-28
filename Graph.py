@@ -259,6 +259,8 @@ class Graph():
 							c.newvacs.append(0)
 							c.newfullvacs.append(0)
 
+
+
 						c.newvacsPerM = [x/c.pop for x in c.newvacs]
 						c.newfullvacsPerM = [x/c.pop for x in c.newfullvacs]
 						c.vacs = [x / (c.pop*10000) for x in c.allvacs]
@@ -326,6 +328,7 @@ class Graph():
 				c = self.selectedC
 				if not loading:self.countries.append(c)
 				self.prep(c)
+
 				for g in self.graphs:
 					added = False
 					if "vacs" in g and not c.vaccinated:

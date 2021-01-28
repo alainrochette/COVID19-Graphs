@@ -283,6 +283,16 @@ class Countries:
 						elif foundvac:
 							break
 				if foundvac:
+					for x in range(1,(c.vacdates[-1]-c.vacdates[0]).days + 1):
+						while c.vacdates[x] != c.vacdates[x-1] + timedelta(days = 1):
+							inc = c.allvacs[x-1] + (c.allvacs[x]-c.allvacs[x-1])/((c.vacdates[x]-c.vacdates[x-1]).days)
+							c.allvacs.insert(x,inc)
+
+							inc2 = c.allfullvacs[x-1] + (c.allfullvacs[x]-c.allfullvacs[x-1])/((c.vacdates[x]-c.vacdates[x-1]).days)
+							c.allfullvacs.insert(x,inc2)
+
+							c.vacdates.insert(x,c.vacdates[x-1] + timedelta(days = 1))
+
 					self.minVacDate = c.vacdates[0] if not self.minVacDate else min(self.minVacDate, c.vacdates[0])
 					self.maxVacDate = c.vacdates[-1] if not self.maxVacDate else max(self.maxVacDate, c.vacdates[-1])
 
@@ -400,6 +410,17 @@ class Countries:
 
 			if foundvac:
 				c.vaccinated = True
+
+				for x in range(1,(c.vacdates[-1]-c.vacdates[0]).days + 1):
+					while c.vacdates[x] != c.vacdates[x-1] + timedelta(days = 1):
+						inc = c.allvacs[x-1] + (c.allvacs[x]-c.allvacs[x-1])/((c.vacdates[x]-c.vacdates[x-1]).days)
+						c.allvacs.insert(x,inc)
+
+						inc2 = c.allfullvacs[x-1] + (c.allfullvacs[x]-c.allfullvacs[x-1])/((c.vacdates[x]-c.vacdates[x-1]).days)
+						c.allfullvacs.insert(x,inc2)
+
+						c.vacdates.insert(x,c.vacdates[x-1] + timedelta(days = 1))
+
 
 				# print(place,c.vacdates, c.allvacs, c.total_vac, c.allfullvacs)
 				self.minVacDate = c.vacdates[0] if not self.minVacDate else min(self.minVacDate, c.vacdates[0])
