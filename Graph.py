@@ -341,7 +341,7 @@ class Graph():
 							gy =getattr(c,g.replace("Big",""))[0:len(gx)]
 							if (self.All.days_since ==0 or "/" in str(self.All.days_since)):
 								gx = [d.strftime("X%m/X%d\n'%y").replace("X0","X").replace("X","") for d in gx] #ALLDATES
-						if "vacs" in g:
+						if "vacs" in g and c.vaccinated:
 							gx = c.vacdates
 							if "PerM" in g:
 								gy = c.newvacsPerM[0:len(gx)]
